@@ -154,11 +154,19 @@ class GoveeBluetoothLight(LightEntity):
             await self._sendBluetoothData(LedCommand.COLOR, [ModelInfo.get_led_mode(self.model), red, green, blue])
             self._attr_extra_state_attributes["rgb_color"] = [red, green, blue]
 
+        _LOGGER.debug("Updated %s %s with %s", self.name, self.model, kwargs)
+
         if self.client:
             await self._disconnect()
         
 
     async def async_turn_off(self, **kwargs) -> None:
+        _LOGGER.debug(
+            "turn off %s %s with %s",
+            self.name,
+            self.model,
+            kwargs,
+        )
         await self._sendBluetoothData(LedCommand.POWER, [0x0])
         self._state = False
 
@@ -190,7 +198,12 @@ class GoveeBluetoothLight(LightEntity):
             disconnected_callback=disconnected_callback,
             timeout=10.0  # Adjust the timeout as needed
         )
-        _LOGGER.debug("Connected to %s", self.name)
+        if client.is_connected:
+            _LOGGER.debug("Connected to %s", self.name)
+            self._attr_extra_state_attributes["connection_status"] = "Connected"
+        else:
+            _LOGGER.debug("Failed to connect to %s", self.name)
+            self._attr_extra_state_attributes["connection_status"] = "Disconnected"
         self.client = client
 
         return client
@@ -223,12 +236,8 @@ class GoveeBluetoothLight(LightEntity):
         
         frame += bytes([checksum & 0xFF])
         client = await self._connectBluetooth()
-        if client.is_connected:
-            await client.write_gatt_char(UUID_CONTROL_CHARACTERISTIC, frame, False)
-            self._attr_extra_state_attributes["connection_status"] = "Connected"
-        else:
-            self._attr_extra_state_attributes["connection_status"] = "Disconnected"
+        
         
         current_time_string = time.strftime("%c")
         self._attr_extra_state_attributes["update_status"] = f"updated: {current_time_string}"
-        await self.async_update_ha_state()  # Reflect the attribute changes immediately
+        await self.async_write_ha_state()  # Reflect the attribute changes immediately
