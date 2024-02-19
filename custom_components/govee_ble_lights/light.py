@@ -23,7 +23,7 @@ from homeassistant.helpers.entity import DeviceInfo, Entity
 
 from .const import DOMAIN
 from .models import LedCommand, LedMode, ControlMode, ModelInfo
-from .kelvin import kelvin_to_rgb
+from .kelvin_rgb import kelvin_to_rgb
 
 UUID_CONTROL_CHARACTERISTIC = '00010203-0405-0607-0809-0a0b0c0d2b11'
 
