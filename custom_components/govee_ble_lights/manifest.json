@@ -1,0 +1,18 @@
+{
+    "domain": "govee_ble_lights",
+    "name": "GOVEE BLE Lights",
+    "integration_type": "hub",
+    "bluetooth": [
+        { "local_name": "ihoment_*", "connectable": false },
+        { "local_name": "Govee_*", "connectable": false },
+        {
+            "service_uuid": "00010203-0405-0607-0809-0a0b0c0d2b11", "connectable": false
+        }
+    ],
+    "codeowners": ["@AznDibs"],
+    "requirements": ["bleak-retry-connector"],
+    "dependencies": ["bluetooth"],
+    "config_flow": true,
+    "iot_class": "local_polling",
+    "version": "0.1.1"
+}
