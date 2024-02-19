@@ -120,6 +120,7 @@ class GoveeBluetoothLight(LightEntity):
             brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT)
             max_brightness = ModelInfo.get_brightness_max(self.model)
             brightness = int(brightness_pct / 100 * max_brightness)
+            packet.append(brightness)
             # await self._sendBluetoothData(LedCommand.BRIGHTNESS, [brightness])
             self._attr_extra_state_attributes["brightness"] = brightness
             self._brightness = brightness
@@ -222,8 +223,8 @@ class GoveeBluetoothLight(LightEntity):
 
         _LOGGER.debug("Updated %s %s with %s", self.name, self.model, kwargs)
 
-        if self.client:
-            await self._disconnect()
+        # if self.client:
+            # await self._disconnect()
         
 
     async def async_turn_off(self, **kwargs) -> None:
