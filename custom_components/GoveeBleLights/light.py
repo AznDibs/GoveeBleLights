@@ -119,8 +119,7 @@ class GoveeBluetoothLight(LightEntity):
         if ATTR_BRIGHTNESS_PCT in kwargs:
             brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT)
             max_brightness = ModelInfo.get_brightness_max(self.model)
-            brightness = int(brightness_pct / 100 * max_brightness) if max_brightness else brightness_pct
-            packet.append(brightness)
+            brightness = int(brightness_pct / 100 * max_brightness)
             # await self._sendBluetoothData(LedCommand.BRIGHTNESS, [brightness])
             self._attr_extra_state_attributes["brightness"] = brightness
             self._brightness = brightness
@@ -128,7 +127,7 @@ class GoveeBluetoothLight(LightEntity):
         elif ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
             max_brightness = ModelInfo.get_brightness_max(self.model)
-            brightness = int(brightness/ 255 * max_brightness) if max_brightness else brightness
+            brightness = int(brightness/ 255 * max_brightness)
             packet.append(brightness)
             # await self._sendBluetoothData(LedCommand.BRIGHTNESS, [brightness])
             self._attr_extra_state_attributes["brightness"] = brightness
@@ -136,7 +135,7 @@ class GoveeBluetoothLight(LightEntity):
             brightness_changed = True
         
         if brightness_changed:
-            await self._sendBluetoothData(LedCommand.COLOR, packet)
+            await self._sendBluetoothData(LedCommand.BRIGHTNESS, packet)
 
 
         color_changed = False
@@ -283,7 +282,8 @@ class GoveeBluetoothLight(LightEntity):
         if len(payload) > 17:
             raise ValueError('Payload too long')
 
-        cmd = cmd & 0xFF
+        if ModelInfo.get_led_mode(self.model) != LedMode.MODE_1501:
+            cmd = cmd & 0xFF
         payload = bytes(payload)
 
         frame = bytes([0x33, cmd]) + bytes(payload)
