@@ -52,7 +52,7 @@ class GoveeBluetoothLight(LightEntity):
         self._mac = light.address
         _LOGGER.debug("Config entry data: %s", config_entry.data)
         self._model = config_entry.data.get("model", "default")
-        self._name = config_entry.data.get("CONF_NAME", self._model + "-" + self._mac.replace(":", "")[-4:])
+        self._name = config_entry.data.get("name", self._model + "-" + self._mac.replace(":", "")[-4:])
         self._ble_device = ble_device
         self._state = None
         self._brightness = None
