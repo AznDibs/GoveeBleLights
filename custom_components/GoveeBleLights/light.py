@@ -110,6 +110,7 @@ class GoveeBluetoothLight(LightEntity):
         )
 
         await self._sendBluetoothData(LedCommand.POWER, [0x1])
+        _LOGGER.debug("Send power on to %s", self.name)
         self._state = True
 
 
@@ -157,7 +158,7 @@ class GoveeBluetoothLight(LightEntity):
         _LOGGER.debug("Updated %s %s with %s", self.name, self.model, kwargs)
 
         if self.client:
-            await self._disconnect()
+            # await self._disconnect()
         
 
     async def async_turn_off(self, **kwargs) -> None:
