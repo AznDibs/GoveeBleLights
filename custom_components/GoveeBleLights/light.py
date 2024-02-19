@@ -51,6 +51,7 @@ class GoveeBluetoothLight(LightEntity):
         self._mac = light.address
         _LOGGER.debug("Config entry data: %s", config_entry.data)
         self._model = config_entry.data.get("model", "default")
+        self._name = config_entry.data.get("custom_name", self._model + "-" + self._mac.replace(":", "")[-4:])
         self._ble_device = ble_device
         self._state = None
         self._brightness = None
@@ -59,7 +60,7 @@ class GoveeBluetoothLight(LightEntity):
     @property
     def name(self) -> str:
         """Return the name of the switch."""
-        return self._model + "-" + self._mac.replace(":", "")[-4:]
+        return self._name# self._model + "-" + self._mac.replace(":", "")[-4:]
     
     @property
     def model(self) -> str:
