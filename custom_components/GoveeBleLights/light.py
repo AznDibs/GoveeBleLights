@@ -56,9 +56,14 @@ class GoveeBluetoothLight(LightEntity):
         self._ble_device = ble_device
         self._state = None
         self._brightness = 0
-        self._rgb = [0,0,0]
+        self._rgb_color = [0,0,0]
         self.client = None
-        self._attr_extra_state_attributes = {}
+        self._attr_extra_state_attributes = {
+            "connection_status": "Disconnected",
+            "update_status": "Never",
+            "brightness": "0",
+            "rgb_color": "0, 0, 0",
+        }
 
     @property
     def name(self) -> str:
@@ -81,7 +86,7 @@ class GoveeBluetoothLight(LightEntity):
     
     @property
     def rgb_color(self):
-        return self._rgb
+        return self._rgb_color
 
     @property
     def is_on(self) -> bool | None:
@@ -119,20 +124,22 @@ class GoveeBluetoothLight(LightEntity):
             max_brightness = ModelInfo.get_brightness_max(self.model)
             brightness = int(brightness_pct / 100 * max_brightness) if max_brightness else brightness_pct
             await self._sendBluetoothData(LedCommand.BRIGHTNESS, [brightness])
-            self._attr_extra_state_attributes["brightness"] = brightness
+            self._attr_extra_state_attributes["brightness"] = brightness is not None
             self._brightness = brightness
         elif ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
             max_brightness = ModelInfo.get_brightness_max(self.model)
             brightness = int(brightness/ max_brightness * 255) if max_brightness else brightness
             await self._sendBluetoothData(LedCommand.BRIGHTNESS, [brightness])
-            self._attr_extra_state_attributes["brightness"] = brightness
+            self._attr_extra_state_attributes["brightness"] = brightness is not None
             self._brightness = brightness
 
 
         if ATTR_RGB_COLOR in kwargs:
             red, green, blue = kwargs.get(ATTR_RGB_COLOR)
             await self._sendBluetoothData(LedCommand.COLOR, [ModelInfo.get_led_mode(self.model), red, green, blue])
+            self._attr_extra_state_attributes["rgb_color"] = f"{red}, {green}, {blue}" is not None
+            self._rgb_color = [red, green, blue]
 
 
         if ATTR_COLOR_TEMP_KELVIN in kwargs:
@@ -143,7 +150,8 @@ class GoveeBluetoothLight(LightEntity):
             )
             red, green, blue = kelvin_to_rgb(color_temp_kelvin)
             await self._sendBluetoothData(LedCommand.COLOR, [ModelInfo.get_led_mode(self.model), red, green, blue])
-            self._attr_extra_state_attributes["rgb_color"] = [red, green, blue]
+            self._attr_extra_state_attributes["rgb_color"] = f"{red}, {green}, {blue}" is not None
+            self._rgb_color = [red, green, blue]
         elif ATTR_COLOR_TEMP in kwargs:
             color_temp = kwargs.get(ATTR_COLOR_TEMP)
             color_temp_kelvin = int(1000000 / color_temp)
@@ -153,7 +161,8 @@ class GoveeBluetoothLight(LightEntity):
             )
             red, green, blue = kelvin_to_rgb(color_temp_kelvin)
             await self._sendBluetoothData(LedCommand.COLOR, [ModelInfo.get_led_mode(self.model), red, green, blue])
-            self._attr_extra_state_attributes["rgb_color"] = [red, green, blue]
+            self._attr_extra_state_attributes["rgb_color"] = f"{red}, {green}, {blue}" is not None
+            self._rgb_color = [red, green, blue]
 
         _LOGGER.debug("Updated %s %s with %s", self.name, self.model, kwargs)
 
