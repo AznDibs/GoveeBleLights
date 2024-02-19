@@ -55,8 +55,8 @@ class GoveeBluetoothLight(LightEntity):
         self._name = config_entry.data.get("name", self._model + "-" + self._mac.replace(":", "")[-4:])
         self._ble_device = ble_device
         self._state = None
-        self._brightness = None
-        self._rgb = None
+        self._brightness = 0
+        self._rgb = [0,0,0]
         self.client = None
         self._attr_extra_state_attributes = {}
 
@@ -211,7 +211,7 @@ class GoveeBluetoothLight(LightEntity):
     async def _handle_disconnect(self):
         """Handle the device's disconnection."""
         self._attr_extra_state_attributes["connection_status"] = "Disconnected"
-        await self.async_write_ha_state()
+        self.async_write_ha_state()
     
 
     async def _sendBluetoothData(self, cmd, payload):
@@ -240,4 +240,4 @@ class GoveeBluetoothLight(LightEntity):
         
         current_time_string = time.strftime("%c")
         self._attr_extra_state_attributes["update_status"] = f"updated: {current_time_string}"
-        await self.async_write_ha_state()  # Reflect the attribute changes immediately
+        self.async_write_ha_state()  # Reflect the attribute changes immediately
