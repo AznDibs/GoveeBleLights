@@ -25,6 +25,7 @@ class GoveeConfigFlow(ConfigFlow, domain=DOMAIN):
         self._discovery_info: None = None
         self._discovered_device: None = None
         self._discovered_devices: dict[str, str] = {}
+        self._available_models = list(ModelInfo.MODELS.keys())
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
@@ -61,7 +62,7 @@ class GoveeConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="bluetooth_confirm", 
             description_placeholders=placeholders,
             data_schema=vol.Schema({
-                vol.Required(CONF_MODEL): vol.In(ModelInfo.MODELS),
+                vol.Required(CONF_MODEL): vol.In(self._available_models),
                 vol.Optional(CONF_NAME, default=title): str, # Allow user to overwrite the name
             })
         )
