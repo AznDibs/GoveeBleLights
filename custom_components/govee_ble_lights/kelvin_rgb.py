@@ -9,7 +9,7 @@ def clamp(value: int, lower: int, upper: int) -> int:
     return max(min(value, upper), lower)
 
 
-def k_to_rgb(
+def kelvin_to_rgb(
     kelvin: int,
 ) -> Tuple[int, int, int]:
     """Compute an rgb value corresponding to a color temperature in kelvin.
