@@ -26,16 +26,16 @@ class ControlMode(IntEnum):
 class ModelInfo:
     """Class to store information about different models of lights."""
     
-    def __init__(self):
-        self.MODELS = dict[str, list[any]]({
-            "default": [LedMode.MODE_2, 255],
-            "H6008": [LedMode.MODE_D, 255],
-            "H6072": [LedMode.MODE_1501, 100]
-        })
+    MODELS = {
+        "default": [LedMode.MODE_2, 255],
+        "H6008": [LedMode.MODE_D, 255],
+        "H6072": [LedMode.MODE_1501, 100]
+    }
 
-
-    def get_led_mode(self, model):
-        return self.MODELS.get(model, self.MODELS["default"])[0]
+    @staticmethod
+    def get_led_mode(model):
+        return ModelInfo.MODELS.get(model, ModelInfo.MODELS["default"])[0]
     
-    def get_brightness_max(self, model):
-        return self.MODELS.get(model, self.MODELS["default"])[1]
+    @staticmethod
+    def get_brightness_max(model):
+        return ModelInfo.MODELS.get(model, ModelInfo.MODELS["default"])[1]
