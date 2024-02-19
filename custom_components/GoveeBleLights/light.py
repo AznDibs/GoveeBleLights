@@ -51,10 +51,11 @@ class GoveeBluetoothLight(LightEntity):
         self._mac = light.address
         _LOGGER.debug("Config entry data: %s", config_entry.data)
         self._model = config_entry.data.get("model", "default")
-        self._name = config_entry.data.get("custom_name", self._model + "-" + self._mac.replace(":", "")[-4:])
+        self._name = config_entry.data.get("CONF_NAME", self._model + "-" + self._mac.replace(":", "")[-4:])
         self._ble_device = ble_device
         self._state = None
         self._brightness = None
+        self.client = None
         self._attr_extra_state_attributes = {}
 
     @property
@@ -143,11 +144,19 @@ class GoveeBluetoothLight(LightEntity):
             red, green, blue = kelvin_to_rgb(color_temp_kelvin)
             await self._sendBluetoothData(LedCommand.COLOR, [ModelInfo.get_led_mode(self.model), red, green, blue])
 
+        if self.client:
+            self._disconnect()
         
 
     async def async_turn_off(self, **kwargs) -> None:
         await self._sendBluetoothData(LedCommand.POWER, [0x0])
         self._state = False
+
+    async def _disconnect(self):
+        if self.client:
+            _LOGGER.debug("Disconnecting from %s", self.name)
+            await self.client.disconnect()
+            self.client = None
 
     async def _connectBluetooth(self) -> BleakClient:
 
@@ -155,6 +164,7 @@ class GoveeBluetoothLight(LightEntity):
 
         async def disconnected_callback(client):
             """Callback for when the client disconnects."""
+            self.client = None
             self._attr_extra_state_attributes["connection_status"] = "Disconnected"
             self.async_write_ha_state()  # Update HA state immediately
 
@@ -165,6 +175,7 @@ class GoveeBluetoothLight(LightEntity):
             disconnected_callback=disconnected_callback,
             timeout=10.0  # Adjust the timeout as needed
         )
+        self.client = client
 
         return client
     
