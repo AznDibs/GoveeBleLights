@@ -29,7 +29,7 @@ class ModelInfo:
     MODELS = {
         "default": [LedMode.MODE_2, 255],
         "H6008": [LedMode.MODE_D, 255],
-        "H6072": [LedMode.MODE_1501, 100]
+        "H6072": [LedMode.MODE_1501, 255]
     }
 
     @staticmethod
