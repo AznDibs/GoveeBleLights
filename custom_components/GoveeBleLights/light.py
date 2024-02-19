@@ -157,7 +157,7 @@ class GoveeBluetoothLight(LightEntity):
 
         _LOGGER.debug("Updated %s %s with %s", self.name, self.model, kwargs)
 
-        if self.client:
+        # if self.client:
             # await self._disconnect()
         
 
