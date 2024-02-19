@@ -47,9 +47,15 @@ class GoveeBluetoothLight(LightEntity):
 
     def __init__(self, light, ble_device, config_entry: ConfigEntry) -> None:
         """Initialize an bluetooth light."""
-        self._name = config_entry.data["custom_name"]
-        self._mac = light.address
         self._model = config_entry.data["model"]
+        self._mac = light.address
+
+            # Remove colons from the MAC address and take the last 4 characters for the backup name
+        sanitized_mac = self._mac.replace(":", "")[-4:]
+        # Use the model and the sanitized, truncated MAC address as the backup name if a custom name is not provided
+        backup_name = f"{self._model} {sanitized_mac}"
+        self._name = config_entry.data.get("CONFIG_NAME", backup_name)
+
         self._ble_device = ble_device
         self._state = None
         self._brightness = None
