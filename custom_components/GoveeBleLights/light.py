@@ -108,11 +108,14 @@ class GoveeBluetoothLight(LightEntity):
 
         if ATTR_BRIGHTNESS_PCT in kwargs:
             brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT)
-            brightness = int(brightness_pct / 100 * ModelInfo.get_brightness_max(self.model))
+            max_brightness = ModelInfo.get_brightness_max(self.model)
+            brightness = int(brightness_pct / 100 * max_brightness) if max_brightness else brightness_pct
             await self._sendBluetoothData(LedCommand.BRIGHTNESS, [brightness])
             self._brightness = brightness
         elif ATTR_BRIGHTNESS in kwargs:
-            brightness = int(kwargs.get(ATTR_BRIGHTNESS / ModelInfo.get_brightness_max(self.model), 255))
+            brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
+            max_brightness = ModelInfo.get_brightness_max(self.model)
+            brightness = int(brightness/ max_brightness * 255) if max_brightness else brightness
             await self._sendBluetoothData(LedCommand.BRIGHTNESS, [brightness])
             self._brightness = brightness
 
@@ -153,7 +156,7 @@ class GoveeBluetoothLight(LightEntity):
         async def disconnected_callback(client):
             """Callback for when the client disconnects."""
             self._attr_extra_state_attributes["connection_status"] = "Disconnected"
-            await self.async_write_ha_state()  # Update HA state immediately
+            self.async_write_ha_state()  # Update HA state immediately
 
         client = await bleak_retry_connector.establish_connection(
             BleakClient,
