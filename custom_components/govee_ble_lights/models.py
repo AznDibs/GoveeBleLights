@@ -25,7 +25,7 @@ class ModelInfo:
     """Class to store information about different models of lights."""
     
     def __init__(self):
-        self.models = {
+        self.MODELS = {
             "default": [LedMode.MODE_2, 255],
             "H6008": [LedMode.MODE_D, 255],
             "H6072": [LedMode.MODE_1501, 100]
@@ -33,7 +33,7 @@ class ModelInfo:
 
 
     def get_led_mode(self, model):
-        return self.models.get(model, self.models["default"])[0]
+        return self.MODELS.get(model, self.MODELS["default"])[0]
     
     def get_brightness_max(self, model):
-        return self.models.get(model, self.models["default"])[1]
+        return self.MODELS.get(model, self.MODELS["default"])[1]
