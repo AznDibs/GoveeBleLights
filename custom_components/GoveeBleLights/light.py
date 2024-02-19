@@ -54,6 +54,7 @@ class GoveeBluetoothLight(LightEntity):
         self._ble_device = ble_device
         self._state = None
         self._brightness = None
+        self._attr_extra_state_attributes = {}
 
     @property
     def name(self) -> str:
@@ -95,8 +96,8 @@ class GoveeBluetoothLight(LightEntity):
     async def async_turn_on(self, **kwargs) -> None:
         _LOGGER.debug(
             "turn on %s %s with %s",
-            self._govee_device.device_id,
-            self.entity_id,
+            self.name,
+            self.model,
             kwargs,
         )
 
@@ -145,7 +146,28 @@ class GoveeBluetoothLight(LightEntity):
         self._state = False
 
     async def _connectBluetooth(self) -> BleakClient:
+        async def handle_disconnect(client):
+            """Callback for when the client disconnects."""
+            self._attr_extra_state_attributes["connection_status"] = "Disconnected"
+            await self.async_update_ha_state()  # To immediately reflect the status change in HA
+
+        async def handle_connect(client):
+            """Callback for when the client connects."""
+            self._attr_extra_state_attributes["connection_status"] = "Connected"
+            await self.async_update_ha_state()  # To immediately reflect the status change in HA
+
         client = await bleak_retry_connector.establish_connection(BleakClient, self._ble_device, self.unique_id)
+        
+        # Register the event handlers
+        client.set_disconnected_callback(handle_disconnect)
+        # Unfortunately, Bleak does not directly offer a connected callback. The connection logic
+        # itself should suffice for setting the "Connected" state, or you can check `client.is_connected`
+        # right after the connection attempt.
+
+        # Assume connected if no exception occurred and client.is_connected returns True
+        if client.is_connected:
+            await handle_connect(client)  # Manually trigger the connect handler
+
         return client
 
     async def _sendBluetoothData(self, cmd, payload):
@@ -170,4 +192,12 @@ class GoveeBluetoothLight(LightEntity):
         
         frame += bytes([checksum & 0xFF])
         client = await self._connectBluetooth()
-        await client.write_gatt_char(UUID_CONTROL_CHARACTERISTIC, frame, False)
+        if client.is_connected:
+            await client.write_gatt_char(UUID_CONTROL_CHARACTERISTIC, frame, False)
+            self._attr_extra_state_attributes["connection_status"] = "Connected"
+        else:
+            self._attr_extra_state_attributes["connection_status"] = "Disconnected"
+        
+        current_time_string = time.strftime("%c")
+        self._attr_extra_state_attributes["update_status"] = f"updated: {current_time_string}"
+        await self.async_update_ha_state()  # Reflect the attribute changes immediately

@@ -1,6 +1,6 @@
 {
     "domain": "govee_ble_lights",
-    "name": "GOVEE BLE Lights",
+    "name": "Govee BLE Lights",
     "integration_type": "hub",
     "bluetooth": [
         { "local_name": "ihoment_*", "connectable": false },
