@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Any
 
+import asyncio
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -154,7 +155,7 @@ class GoveeBluetoothLight(LightEntity):
             self._attr_extra_state_attributes["rgb_color"] = [red, green, blue]
 
         if self.client:
-            self._disconnect()
+            await self._disconnect()
         
 
     async def async_turn_off(self, **kwargs) -> None:
@@ -171,11 +172,16 @@ class GoveeBluetoothLight(LightEntity):
 
 
 
-        async def disconnected_callback(client):
+        def disconnected_callback(client):
+            if self.client == client:
+                self.client = None
+                _LOGGER.debug("Disconnected from %s", self.name)
             """Callback for when the client disconnects."""
-            self.client = None
-            self._attr_extra_state_attributes["connection_status"] = "Disconnected"
-            self.async_write_ha_state()  # Update HA state immediately
+            # Schedule the coroutine from a synchronous context
+            asyncio.run_coroutine_threadsafe(
+                self._handle_disconnect(),
+                self.hass.loop
+            )
 
         client = await bleak_retry_connector.establish_connection(
             BleakClient,
@@ -188,6 +194,11 @@ class GoveeBluetoothLight(LightEntity):
         self.client = client
 
         return client
+    
+    async def _handle_disconnect(self):
+        """Handle the device's disconnection."""
+        self._attr_extra_state_attributes["connection_status"] = "Disconnected"
+        await self.async_write_ha_state()
     
 
     async def _sendBluetoothData(self, cmd, payload):
@@ -220,4 +231,4 @@ class GoveeBluetoothLight(LightEntity):
         
         current_time_string = time.strftime("%c")
         self._attr_extra_state_attributes["update_status"] = f"updated: {current_time_string}"
-        self.async_update_ha_state()  # Reflect the attribute changes immediately
+        await self.async_update_ha_state()  # Reflect the attribute changes immediately
