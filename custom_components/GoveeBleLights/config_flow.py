@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 import voluptuous as vol
@@ -9,7 +7,7 @@ from homeassistant.components.bluetooth import (
     async_discovered_service_info,
 )
 from homeassistant.config_entries import ConfigFlow
-from homeassistant.const import (CONF_ADDRESS, CONF_MODEL, CONF_NAME)
+from homeassistant.const import CONF_ADDRESS, CONF_MODEL, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import DOMAIN
@@ -25,7 +23,7 @@ class GoveeConfigFlow(ConfigFlow, domain=DOMAIN):
         self._discovery_info: None = None
         self._discovered_device: None = None
         self._discovered_devices: dict[str, str] = {}
-        self._available_models = list(ModelInfo.MODELS.keys())
+        self._available_models: list[str] = list(ModelInfo.MODELS.keys())
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
