@@ -73,10 +73,10 @@ class GoveeConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             address = user_input[CONF_ADDRESS]
             model = user_input[CONF_MODEL]
+            custom_name = user_input.get(CONF_NAME, self._discovered_devices[address])  # Use provided name or default to discovered name
             await self.async_set_unique_id(address, raise_on_progress=False)
             self._abort_if_unique_id_configured()
             # Handle custom name input
-            custom_name = user_input.get(CONF_NAME, self._discovered_devices[address])  # Use provided name or default to discovered name
             return self.async_create_entry(
                 title=custom_name, data={
                     CONF_MODEL: model,

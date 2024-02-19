@@ -9,6 +9,7 @@ import time
 import bleak_retry_connector
 
 from bleak import BleakClient
+from homeassistant.core import HomeAssistant
 from homeassistant.components import bluetooth
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS_PCT,
@@ -29,7 +30,7 @@ UUID_CONTROL_CHARACTERISTIC = '00010203-0405-0607-0809-0a0b0c0d2b11'
 
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
     light = hass.data[DOMAIN][config_entry.entry_id]
     #bluetooth setup
     ble_device = bluetooth.async_ble_device_from_address(hass, light.address.upper(), False)
@@ -47,14 +48,14 @@ class GoveeBluetoothLight(LightEntity):
 
     def __init__(self, light, ble_device, config_entry: ConfigEntry) -> None:
         """Initialize an bluetooth light."""
-        self._model = config_entry.data["CONF_MODEL"]
+        self._model = config_entry.data["model"]
         self._mac = light.address
 
             # Remove colons from the MAC address and take the last 4 characters for the backup name
         sanitized_mac = self._mac.replace(":", "")[-4:]
         # Use the model and the sanitized, truncated MAC address as the backup name if a custom name is not provided
         backup_name = f"{self._model} {sanitized_mac}"
-        self._name = config_entry.data.get("CONFIG_NAME", backup_name)
+        self._name = config_entry.data.get("custom_name", backup_name)
 
         self._ble_device = ble_device
         self._state = None
