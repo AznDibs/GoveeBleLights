@@ -1,3 +1,5 @@
+from enum import IntEnum
+
 class LedCommand(IntEnum):
     """ A control command packet's type. """
     POWER      = 0x01
