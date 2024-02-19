@@ -146,29 +146,24 @@ class GoveeBluetoothLight(LightEntity):
         self._state = False
 
     async def _connectBluetooth(self) -> BleakClient:
-        async def handle_disconnect(client):
+
+
+
+        async def disconnected_callback(client):
             """Callback for when the client disconnects."""
             self._attr_extra_state_attributes["connection_status"] = "Disconnected"
-            await self.async_update_ha_state()  # To immediately reflect the status change in HA
+            await self.async_write_ha_state()  # Update HA state immediately
 
-        async def handle_connect(client):
-            """Callback for when the client connects."""
-            self._attr_extra_state_attributes["connection_status"] = "Connected"
-            await self.async_update_ha_state()  # To immediately reflect the status change in HA
-
-        client = await bleak_retry_connector.establish_connection(BleakClient, self._ble_device, self.unique_id)
-        
-        # Register the event handlers
-        client.set_disconnected_callback(handle_disconnect)
-        # Unfortunately, Bleak does not directly offer a connected callback. The connection logic
-        # itself should suffice for setting the "Connected" state, or you can check `client.is_connected`
-        # right after the connection attempt.
-
-        # Assume connected if no exception occurred and client.is_connected returns True
-        if client.is_connected:
-            await handle_connect(client)  # Manually trigger the connect handler
+        client = await bleak_retry_connector.establish_connection(
+            BleakClient,
+            self._ble_device, 
+            self.unique_id,
+            disconnected_callback=disconnected_callback,
+            timeout=10.0  # Adjust the timeout as needed
+        )
 
         return client
+    
 
     async def _sendBluetoothData(self, cmd, payload):
         if not isinstance(cmd, int):
@@ -200,4 +195,4 @@ class GoveeBluetoothLight(LightEntity):
         
         current_time_string = time.strftime("%c")
         self._attr_extra_state_attributes["update_status"] = f"updated: {current_time_string}"
-        await self.async_update_ha_state()  # Reflect the attribute changes immediately
+        self.async_update_ha_state()  # Reflect the attribute changes immediately
