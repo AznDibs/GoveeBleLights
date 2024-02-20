@@ -57,7 +57,7 @@ class GoveeBluetoothLight(LightEntity):
     _attr_min_color_temp_kelvin = 2000
     _attr_max_color_temp_kelvin = 9000
     _attr_supported_color_modes = {
-            ColorMode.COLOR_TEMP_KELVIN,
+            ColorMode.COLOR_TEMP,
             ColorMode.RGB,
         }
     
@@ -177,8 +177,9 @@ class GoveeBluetoothLight(LightEntity):
             self._rgb_color = [red, green, blue]
             self._dirty_rgb_color = True
             self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
-        elif ATTR_COLOR_TEMP_KELVIN in kwargs:
-            kelvin = kwargs.get(ATTR_COLOR_TEMP)
+        elif ATTR_COLOR_TEMP in kwargs:
+            color_temp = kwargs.get(ATTR_COLOR_TEMP)
+            kelvin = int(1000000 / color_temp)
             kelvin = max(min(kelvin, self._attr_max_color_temp_kelvin), self._attr_min_color_temp_kelvin)
             red, green, blue = kelvin_to_rgb(kelvin)
             self._rgb_color = [red, green, blue]
@@ -204,6 +205,7 @@ class GoveeBluetoothLight(LightEntity):
 
     async def _send_power(self):
         """Send the power state to the device."""
+        self._attr_extra_state_attributes["power_data"] = 0x1 if self._state else 0x0
         try:
             return await self._send_bluetooth_data(LedCommand.POWER, [0x1 if self._state else 0x0])
         
@@ -219,6 +221,7 @@ class GoveeBluetoothLight(LightEntity):
 
         max_brightness = ModelInfo.get_brightness_max(self.model)
         brightness = int(brightness/ 255 * max_brightness)
+        self._attr_extra_state_attributes["brightness_data"] = brightness
         _packet.append(brightness)
         try:
             return await self._send_bluetooth_data(LedCommand.BRIGHTNESS, _packet)
@@ -232,6 +235,9 @@ class GoveeBluetoothLight(LightEntity):
 
     async def _send_rgb_color(self, red, green, blue):
         _packet = [ModelInfo.get_led_mode(self.model)]
+
+        self._attr_extra_state_attributes["rgb_color_data"] = [red, green, blue]
+
         if ModelInfo.get_led_mode(self.model) == LedMode.MODE_1501:
                 _packet.extend([
                     0x01,
@@ -404,6 +410,7 @@ class GoveeBluetoothLight(LightEntity):
             raise ValueError('Payload too long')
 
         _LOGGER.debug("Sending command %s with payload %s to %s", cmd, payload, self.name)
+        self.attr_extra_state_attributes["last_command"] = cmd
         # if ModelInfo.get_led_mode(self.model) != LedMode.MODE_1501:
         cmd = cmd & 0xFF
         payload = bytes(payload)
