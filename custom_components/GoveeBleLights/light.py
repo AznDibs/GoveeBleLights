@@ -224,9 +224,9 @@ class GoveeBluetoothLight(LightEntity):
         # _packet = [ModelInfo.get_led_mode(self.model)]
 
         max_brightness = ModelInfo.get_brightness_max(self.model)
-        brightness = int(brightness * max_brightness) # must be int 
-        self._attr_extra_state_attributes["brightness_data"] = brightness
-        _packet = [brightness]
+        self._temp_brightness = int(brightness * max_brightness) # must be int. use _temp_brightness to store the value so that it can be used in the keep alive task. useful for keeping % brightness for card
+        self._attr_extra_state_attributes["brightness_data"] = self._temp_brightness
+        _packet = [self._temp_brightness]
         try:
             return await self._send_bluetooth_data(LedCommand.BRIGHTNESS, _packet)
     
