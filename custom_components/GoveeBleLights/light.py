@@ -268,7 +268,7 @@ class GoveeBluetoothLight(LightEntity):
 
                     self._dirty_brightness = False
                 elif self._dirty_rgb_color:
-                    if not await self._send_rgb_color(*self._rgb_color):
+                    if not await self._send_rgb_color(self._rgb_color):
                         await asyncio.sleep(1);
                         continue
 
@@ -286,7 +286,7 @@ class GoveeBluetoothLight(LightEntity):
                         elif self._ping_roll % 3 == 1:
                             _async_res = await self._send_brightness(self._brightness);
                         elif self._ping_roll % 3 == 2:
-                            _async_res = await self._send_rgb_color(*self._rgb_color);
+                            _async_res = await self._send_rgb_color(self._rgb_color);
                     
                     await asyncio.sleep(0.1)
                     continue
