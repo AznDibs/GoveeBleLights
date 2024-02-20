@@ -57,7 +57,6 @@ class GoveeBluetoothLight(LightEntity):
     _attr_min_color_temp_kelvin = 2000
     _attr_max_color_temp_kelvin = 9000
     _attr_supported_color_modes = {
-            ColorMode.COLOR_TEMP,
             ColorMode.RGB,
         }
     
@@ -73,7 +72,7 @@ class GoveeBluetoothLight(LightEntity):
         self._state = None
         self._is_on = False
         self._brightness = 0
-        self._rgb_color = [0,0,0]
+        self._rgb_color = [255,255,255]
         self._client = None
         
         self._attr_extra_state_attributes = {}
@@ -107,7 +106,7 @@ class GoveeBluetoothLight(LightEntity):
     
     @property
     def rgb_color(self):
-        return self._rgb_color or [0,0,0]
+        return self._rgb_color or [255,255,255]
 
     @property
     def is_on(self) -> bool | None:
@@ -157,10 +156,17 @@ class GoveeBluetoothLight(LightEntity):
         self._dirty_state = True
         self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
 
+
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
 
             self._brightness = brightness
+            self._dirty_brightness = True
+            self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
+        elif ATTR_BRIGHTNESS_PCT in kwargs:
+            brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT, 100)
+
+            self._brightness = brightness_pct * 255 / 100
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
 
@@ -170,9 +176,9 @@ class GoveeBluetoothLight(LightEntity):
             self._rgb_color = [red, green, blue]
             self._dirty_rgb_color = True
             self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
-
-        if ATTR_COLOR_TEMP_KELVIN in kwargs:
+        elif ATTR_COLOR_TEMP_KELVIN in kwargs:
             kelvin = kwargs.get(ATTR_COLOR_TEMP)
+            kelvin = max(min(kelvin, self._attr_max_color_temp_kelvin), self._attr_min_color_temp_kelvin)
             red, green, blue = kelvin_to_rgb(kelvin)
             self._rgb_color = [red, green, blue]
             self._dirty_rgb_color = True
@@ -300,7 +306,7 @@ class GoveeBluetoothLight(LightEntity):
                         elif self._ping_roll % 3 == 2:
                             _async_res = await self._send_rgb_color(*self._rgb_color);
                         
-                        if self._ping_roll > 3:
+                        if self._ping_roll > 15:
                             self._ping_roll = 0
                             if self._client is not None:
                                 await self._client.disconnect()
