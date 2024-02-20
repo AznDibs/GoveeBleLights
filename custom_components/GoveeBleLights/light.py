@@ -157,7 +157,7 @@ class GoveeBluetoothLight(LightEntity):
             _LOGGER.debug("Cancelled keep alive task for %s", self.name)
 
 
-        self._state = True
+        self._temp_state = True
         self._dirty_state = True
         self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
 
@@ -165,20 +165,20 @@ class GoveeBluetoothLight(LightEntity):
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
 
-            self._brightness = brightness
+            self._temp_brightness = brightness
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
         elif ATTR_BRIGHTNESS_PCT in kwargs:
             brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT, 100)
 
-            self._brightness = brightness_pct * 255 / 100
+            self._temp_brightness = brightness_pct * 255 / 100
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
 
         if ATTR_RGB_COLOR in kwargs:
             red, green, blue = kwargs.get(ATTR_RGB_COLOR)
 
-            self._rgb_color = [red, green, blue]
+            self._temp_rgb_color = [red, green, blue]
             self._dirty_rgb_color = True
             self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
         elif ATTR_COLOR_TEMP in kwargs:
@@ -186,7 +186,7 @@ class GoveeBluetoothLight(LightEntity):
             kelvin = int(1000000 / color_temp)
             kelvin = max(min(kelvin, self._attr_max_color_temp_kelvin), self._attr_min_color_temp_kelvin)
             red, green, blue = kelvin_to_rgb(kelvin)
-            self._rgb_color = [red, green, blue]
+            self._temp_rgb_color = [red, green, blue]
             self._dirty_rgb_color = True
             self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
 
@@ -207,11 +207,11 @@ class GoveeBluetoothLight(LightEntity):
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
 
 
-    async def _send_power(self):
+    async def _send_power(self, power):
         """Send the power state to the device."""
-        self._attr_extra_state_attributes["power_data"] = 0x1 if self._state else 0x0
+        self._attr_extra_state_attributes["power_data"] = 0x1 if power else 0x0
         try:
-            return await self._send_bluetooth_data(LedCommand.POWER, [0x1 if self._state else 0x0])
+            return await self._send_bluetooth_data(LedCommand.POWER, [0x1 if power else 0x0])
         
         except Exception as exception:
             _LOGGER.error("Error sending power to %s: %s", self.name, exception)
@@ -223,7 +223,6 @@ class GoveeBluetoothLight(LightEntity):
         _packet = [ModelInfo.get_led_mode(self.model)]
 
         max_brightness = ModelInfo.get_brightness_max(self.model)
-        brightness = int(brightness/ 255 * max_brightness)
         self._attr_extra_state_attributes["brightness_data"] = brightness
         _packet.append(brightness)
         try:
@@ -237,7 +236,6 @@ class GoveeBluetoothLight(LightEntity):
 
     async def _send_rgb_color(self, red, green, blue):
         _packet = [ModelInfo.get_led_mode(self.model)]
-
         self._attr_extra_state_attributes["rgb_color_data"] = [red, green, blue]
 
         if ModelInfo.get_led_mode(self.model) == LedMode.MODE_1501:
@@ -281,26 +279,30 @@ class GoveeBluetoothLight(LightEntity):
             
                 """Send the packets."""
                 if self._dirty_state:
-                    if not await self._send_power():
+                    if not await self._send_power(self._temp_state):
                         await asyncio.sleep(1);
                         continue
 
                     self._dirty_state = False
                     self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
+                    self._state = self._temp_state
+
                 elif self._dirty_brightness:
-                    if not await self._send_brightness(self._brightness):
+                    if not await self._send_brightness(self._temp_brightness):
                         await asyncio.sleep(1);
                         continue
 
                     self._dirty_brightness = False
                     self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
+                    self._brightness = self._temp_brightness
                 elif self._dirty_rgb_color:
-                    if not await self._send_rgb_color(*self._rgb_color):
+                    if not await self._send_rgb_color(*self._temp_rgb_color):
                         await asyncio.sleep(1);
                         continue
 
                     self._dirty_rgb_color = False
                     self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
+                    self._rgb_color = self._temp_rgb_color
                 else:
                     """Keep alive, send a packet every 1 second."""
                     _changed = False # no mqtt packet if no change
@@ -311,7 +313,7 @@ class GoveeBluetoothLight(LightEntity):
                         self._ping_roll += 1
 
                         if self._ping_roll % 3 == 0 or self._state == 0:
-                            _async_res = await self._send_power();
+                            _async_res = await self._send_power(self._state);
                         elif self._ping_roll % 3 == 1:
                             _async_res = await self._send_brightness(self._brightness);
                         elif self._ping_roll % 3 == 2:
