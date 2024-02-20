@@ -252,6 +252,7 @@ class GoveeBluetoothLight(LightEntity):
             try:
                 """Connect to the device."""
                 if not await self._connect():
+
                     await asyncio.sleep(2)
                     continue
 
@@ -280,6 +281,7 @@ class GoveeBluetoothLight(LightEntity):
                     """Keep alive, send a packet every 1 second."""
                     _changed = False # no mqtt packet if no change
 
+
                     if (time.time() - self._last_update) >= 1:
                         _async_res = False
                         self._ping_roll += 1
@@ -290,15 +292,20 @@ class GoveeBluetoothLight(LightEntity):
                             _async_res = await self._send_brightness(self._brightness);
                         elif self._ping_roll % 3 == 2:
                             _async_res = await self._send_rgb_color(*self._rgb_color);
-                    
-                    await asyncio.sleep(0.1)
+                        
+                        if self._ping_roll > 3:
+                            self._ping_roll = 0
+                            if self._client is not None:
+                                await self._client.disconnect()
+
+                    await asyncio.sleep(1)
                     continue
                 
                 if _changed:
                     # send mqtt packet
                     pass
                 
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0.1)
 
 
             except Exception as exception:
@@ -331,6 +338,15 @@ class GoveeBluetoothLight(LightEntity):
 
         if self._client != None and self._client.is_connected:
             return self._client
+        
+        try:
+            if self._client is not None:
+                _LOGGER.debug("Disconnecting from %s", self.name)
+                await self._client.disconnect()
+        except Exception as exception:
+            pass
+
+        self._client = None
 
         def disconnected_callback(client):
             if self._client == client:
