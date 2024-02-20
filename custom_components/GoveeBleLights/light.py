@@ -249,7 +249,7 @@ class GoveeBluetoothLight(LightEntity):
             try:
                 """Connect to the device."""
                 if not await self._connect():
-                    time.sleep(2)
+                    asyncio.sleep(2)
                     continue
 
                 _changed = True # send mqtt packet once mqtt is implemented
@@ -309,7 +309,7 @@ class GoveeBluetoothLight(LightEntity):
 
                 self._client = None
 
-                time.sleep(2)
+                asyncio.sleep(2)
 
 
 
