@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import asyncio
 import logging
+import random
 _LOGGER = logging.getLogger(__name__)
 
 from enum import IntEnum
@@ -45,6 +46,8 @@ async def async_setup_entry(
     async_add_entities([GoveeBluetoothLight(light, ble_device, config_entry)])
 
 class GoveeBluetoothLight(LightEntity):
+    MAX_RECONNECT_ATTEMPTS = 5
+    INITIAL_RECONNECT_DELAY = 1 # seconds
 
     ble_device: Optional[BLEDevice] = None
 
@@ -268,7 +271,7 @@ class GoveeBluetoothLight(LightEntity):
 
                     self._dirty_brightness = False
                 elif self._dirty_rgb_color:
-                    if not await self._send_rgb_color(self._rgb_color):
+                    if not await self._send_rgb_color(*self._rgb_color):
                         await asyncio.sleep(1);
                         continue
 
@@ -286,7 +289,7 @@ class GoveeBluetoothLight(LightEntity):
                         elif self._ping_roll % 3 == 1:
                             _async_res = await self._send_brightness(self._brightness);
                         elif self._ping_roll % 3 == 2:
-                            _async_res = await self._send_rgb_color(self._rgb_color);
+                            _async_res = await self._send_rgb_color(*self._rgb_color);
                     
                     await asyncio.sleep(0.1)
                     continue
@@ -326,20 +329,12 @@ class GoveeBluetoothLight(LightEntity):
 
     async def _connect(self):
 
-        if self._client != None:
+        if self._client != None and self._client.is_connected:
             return self._client
 
         def disconnected_callback(client):
             if self._client == client:
-                self._client = None
-                _LOGGER.debug("Disconnected from %s", self.name)
-                self._attr_extra_state_attributes["connection_status"] = "Disconnected"
-            """Callback for when the client disconnects."""
-            # Schedule the coroutine from a synchronous context
-            asyncio.run_coroutine_threadsafe(
-                self._handle_disconnect(),
-                self.hass.loop
-            )
+                self.hass.loop.create_task(self._handle_disconnect())
 
         try:
             client = await bleak_retry_connector.establish_connection(
@@ -353,7 +348,7 @@ class GoveeBluetoothLight(LightEntity):
             self._reconnect = 0
             self._attr_extra_state_attributes["connection_status"] = "Connected"
 
-            return self._client
+            return self._client.is_connected
         except Exception as exception:
             _LOGGER.error("Failed to connect to %s: %s", self.name, exception)
             self._attr_extra_state_attributes["connection_status"] = "Disconnected"
