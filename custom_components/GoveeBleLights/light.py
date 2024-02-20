@@ -166,7 +166,7 @@ class GoveeBluetoothLight(LightEntity):
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
 
-            self._temp_brightness = brightness
+            self._temp_brightness = brightness * 100 / 255
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
         elif ATTR_BRIGHTNESS_PCT in kwargs:
@@ -224,6 +224,7 @@ class GoveeBluetoothLight(LightEntity):
         _packet = [ModelInfo.get_led_mode(self.model)]
 
         max_brightness = ModelInfo.get_brightness_max(self.model)
+        brightness = int(brightness * max_brightness)
         self._attr_extra_state_attributes["brightness_data"] = brightness
         _packet.append(brightness)
         try:
