@@ -59,6 +59,7 @@ class GoveeBluetoothLight(LightEntity):
     _attr_supported_color_modes = {
             ColorMode.COLOR_TEMP,
             ColorMode.RGB,
+            ColorMode.BRIGHTNESS,
         }
     
 
