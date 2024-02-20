@@ -201,7 +201,7 @@ class GoveeBluetoothLight(LightEntity):
             self._keep_alive_task.cancel()
             _LOGGER.debug("Cancelled keep alive task for %s", self.name)
 
-        self._state = False
+        self._temp_state = False
         self._dirty_state = True
         self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
 
@@ -288,7 +288,8 @@ class GoveeBluetoothLight(LightEntity):
                     self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
                     self._state = self._temp_state
 
-                elif self._dirty_brightness:
+                # always try to send brightness and color right after power
+                if self._dirty_brightness:
                     if not await self._send_brightness(self._temp_brightness):
                         await asyncio.sleep(1);
                         continue
