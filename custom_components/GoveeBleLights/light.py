@@ -99,7 +99,7 @@ class GoveeBluetoothLight(LightEntity):
 
     @property
     def model(self):
-        return self._model
+        return self._model + "-" + self._mac.replace(":", "")[-4:]
 
     @property
     def unique_id(self) -> str:
