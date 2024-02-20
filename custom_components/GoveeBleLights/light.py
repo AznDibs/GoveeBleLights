@@ -83,6 +83,10 @@ class GoveeBluetoothLight(LightEntity):
         self._dirty_brightness = False
         self._dirty_rgb_color = False
 
+        self._power_data = 0x0
+        self._brightness_data = 0x0
+        self._rgb_color_data = [0,0,0]
+
         self._reconnect = 0
         self._last_update = time.time()
         self._ping_roll = 0
