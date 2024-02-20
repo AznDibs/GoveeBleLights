@@ -171,7 +171,7 @@ class GoveeBluetoothLight(LightEntity):
             self._dirty_rgb_color = True
             self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
 
-        if ATTR_COLOR_TEMP in kwargs:
+        if ATTR_COLOR_TEMP_KELVIN in kwargs:
             kelvin = kwargs.get(ATTR_COLOR_TEMP)
             red, green, blue = kelvin_to_rgb(kelvin)
             self._rgb_color = [red, green, blue]
