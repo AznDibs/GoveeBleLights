@@ -166,13 +166,15 @@ class GoveeBluetoothLight(LightEntity):
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
 
-            self._temp_brightness = brightness / 255 # normalize to 1
+            max_brightness = ModelInfo.get_brightness_max(self.model)
+            self._temp_brightness = int(brightness / 255 * max_brightness) # normalize to 1 then multiply by max brightness
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
         elif ATTR_BRIGHTNESS_PCT in kwargs:
             brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT, 100)
 
-            self._temp_brightness = brightness_pct / 100 # normalize to 1
+            max_brightness = ModelInfo.get_brightness_max(self.model)
+            self._temp_brightness = int(brightness_pct / 100 * max_brightness) # normalize to 1 then multiply by max brightness
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
 
@@ -221,12 +223,9 @@ class GoveeBluetoothLight(LightEntity):
 
 
     async def _send_brightness(self, brightness):
-        # _packet = [ModelInfo.get_led_mode(self.model)]
-
-        max_brightness = ModelInfo.get_brightness_max(self.model)
-        self._temp_brightness = int(brightness * max_brightness) # must be int. use _temp_brightness to store the value so that it can be used in the keep alive task. useful for keeping % brightness for card
-        self._attr_extra_state_attributes["brightness_data"] = self._temp_brightness
-        _packet = [self._temp_brightness]
+        """Send the brightness to the device."""
+        self._attr_extra_state_attributes["brightness_data"] = brightness
+        _packet = [brightness]
         try:
             return await self._send_bluetooth_data(LedCommand.BRIGHTNESS, _packet)
     
