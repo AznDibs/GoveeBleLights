@@ -288,7 +288,8 @@ class GoveeBluetoothLight(LightEntity):
                     self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
                     self._state = self._temp_state
 
-                elif self._dirty_brightness:
+                
+                if self._dirty_brightness:
                     if not await self._send_brightness(self._temp_brightness):
                         await asyncio.sleep(1);
                         continue
@@ -309,14 +310,14 @@ class GoveeBluetoothLight(LightEntity):
                     _changed = False # no mqtt packet if no change
 
 
-                    if (time.time() - self._last_update) >= 1:
+                    if (time.time() - self._last_update) >= 0.3:
                         _async_res = False
                         self._ping_roll += 1
 
                         if self._ping_roll % 3 == 0 or self._state == 0:
                             _async_res = await self._send_power(self._state);
                         elif self._ping_roll % 3 == 1:
-                            _async_res = await self._send_brightness(self._temp_brightness);
+                            _async_res = await self._send_brightness(self._brightness);
                         elif self._ping_roll % 3 == 2:
                             _async_res = await self._send_rgb_color(*self._rgb_color);
                         
@@ -325,7 +326,7 @@ class GoveeBluetoothLight(LightEntity):
                             if self._client is not None:
                                 await self._client.disconnect()
 
-                    jitter = random.uniform(0.1, 0.5)
+                    jitter = random.uniform(0.3, 0.6)
                     await asyncio.sleep(jitter)
                     continue
                 
