@@ -249,7 +249,7 @@ class GoveeBluetoothLight(LightEntity):
             try:
                 """Connect to the device."""
                 if not await self._connect():
-                    asyncio.sleep(2)
+                    await asyncio.sleep(2)
                     continue
 
                 _changed = True # send mqtt packet once mqtt is implemented
@@ -257,19 +257,19 @@ class GoveeBluetoothLight(LightEntity):
                 """Send the packets."""
                 if self._dirty_state:
                     if not await self._send_power():
-                        asyncio.sleep(1);
+                        await asyncio.sleep(1);
                         continue
 
                     self._dirty_state = False
                 elif self._dirty_brightness:
                     if not await self._send_brightness(self._brightness):
-                        asyncio.sleep(1);
+                        await asyncio.sleep(1);
                         continue
 
                     self._dirty_brightness = False
                 elif self._dirty_rgb_color:
                     if not await self._send_rgb_color(*self._rgb_color):
-                        asyncio.sleep(1);
+                        await asyncio.sleep(1);
                         continue
 
                     self._dirty_rgb_color = False
@@ -288,14 +288,14 @@ class GoveeBluetoothLight(LightEntity):
                         elif self._ping_roll % 3 == 2:
                             _async_res = await self._send_rgb_color(*self._rgb_color);
                     
-                    asyncio.sleep(0.1)
+                    await asyncio.sleep(0.1)
                     continue
                 
                 if _changed:
                     # send mqtt packet
                     pass
                 
-                asyncio.sleep(0.01)
+                await asyncio.sleep(0.01)
 
 
             except Exception as exception:
@@ -309,7 +309,7 @@ class GoveeBluetoothLight(LightEntity):
 
                 self._client = None
 
-                asyncio.sleep(2)
+                await asyncio.sleep(2)
 
 
 
