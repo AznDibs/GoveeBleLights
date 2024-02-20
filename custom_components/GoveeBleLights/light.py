@@ -326,7 +326,8 @@ class GoveeBluetoothLight(LightEntity):
                             if self._client is not None:
                                 await self._client.disconnect()
 
-                    await asyncio.sleep(0.1)
+                    jitter = random.uniform(0.1, 0.5)
+                    await asyncio.sleep(jitter)
                     continue
                 
                 if _changed:
