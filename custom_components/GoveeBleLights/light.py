@@ -166,13 +166,13 @@ class GoveeBluetoothLight(LightEntity):
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
 
-            self._temp_brightness = int(brightness / 255 * 100) # normalize to 100
+            self._temp_brightness = brightness / 255
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
         elif ATTR_BRIGHTNESS_PCT in kwargs:
             brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT, 100)
 
-            self._temp_brightness = int(brightness_pct) # normalize to 100
+            self._temp_brightness = brightness_pct / 100
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
 
@@ -223,7 +223,8 @@ class GoveeBluetoothLight(LightEntity):
     async def _send_brightness(self, brightness):
         """Send the brightness to the device."""
         max_brightness = ModelInfo.get_brightness_max(self.model)
-        brightness = int(brightness * max_brightness / 100)
+        brightness = int(brightness * max_brightness)
+        self._brightness = brightness
         self._attr_extra_state_attributes["brightness_data"] = brightness
         _packet = [brightness]
         try:
@@ -295,7 +296,7 @@ class GoveeBluetoothLight(LightEntity):
 
                     self._dirty_brightness = False
                     self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
-                    self._brightness = self._temp_brightness
+                    # self._brightness = self._temp_brightness
                 elif self._dirty_rgb_color:
                     if not await self._send_rgb_color(*self._temp_rgb_color):
                         await asyncio.sleep(1);
