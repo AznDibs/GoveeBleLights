@@ -171,6 +171,13 @@ class GoveeBluetoothLight(LightEntity):
             self._dirty_rgb_color = True
             self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
 
+        if ATTR_COLOR_TEMP in kwargs:
+            kelvin = kwargs.get(ATTR_COLOR_TEMP)
+            red, green, blue = kelvin_to_rgb(kelvin)
+            self._rgb_color = [red, green, blue]
+            self._dirty_rgb_color = True
+            self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
+
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
         # if self.client:
             # await self._disconnect()
@@ -298,7 +305,7 @@ class GoveeBluetoothLight(LightEntity):
                             if self._client is not None:
                                 await self._client.disconnect()
 
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(0.1)
                     continue
                 
                 if _changed:
@@ -386,6 +393,7 @@ class GoveeBluetoothLight(LightEntity):
         if len(payload) > 17:
             raise ValueError('Payload too long')
 
+        _LOGGER.debug("Sending command %s with payload %s to %s", cmd, payload, self.name)
         # if ModelInfo.get_led_mode(self.model) != LedMode.MODE_1501:
         cmd = cmd & 0xFF
         payload = bytes(payload)
@@ -403,7 +411,7 @@ class GoveeBluetoothLight(LightEntity):
 
 
         try:
-            await self._client.write_gatt_char(UUID_CONTROL_CHARACTERISTIC, frame) # , False)
+            await self._client.write_gatt_char(UUID_CONTROL_CHARACTERISTIC, frame, False)
             self._last_update = time.time()
             _LOGGER.debug("Sent data to %s: %s", self.name, frame)
             return True
