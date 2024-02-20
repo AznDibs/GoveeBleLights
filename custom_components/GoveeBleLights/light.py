@@ -211,8 +211,7 @@ class GoveeBluetoothLight(LightEntity):
         
         except Exception as exception:
             _LOGGER.error("Error sending power to %s: %s", self.name, exception)
-            self._attr_extra_state_attributes["error"] = f"Error sending power to {self.name}: {exception}"
-        
+
         return False
 
 
@@ -228,8 +227,7 @@ class GoveeBluetoothLight(LightEntity):
     
         except Exception as exception:
             _LOGGER.error("Error sending brightness to %s: %s", self.name, exception)
-            self._attr_extra_state_attributes["error"] = f"Error sending brightness to {self.name}: {exception}"
-        
+
         return False
     
 
@@ -260,8 +258,7 @@ class GoveeBluetoothLight(LightEntity):
         
         except Exception as exception:
             _LOGGER.error("Error sending color to %s: %s", self.name, exception)
-            self._attr_extra_state_attributes["error"] = f"Error sending color to {self.name}: {exception}"
-        
+
         return False
 
 
@@ -333,12 +330,11 @@ class GoveeBluetoothLight(LightEntity):
 
             except Exception as exception:
                 _LOGGER.error("Error sending packets to %s: %s", self.name, exception)
-
                 try:
                     if self._client is not None:
                         await self._client.disconnect()
                 except Exception as exception:
-                    pass
+                    _LOGGER.error("Error disconnecting from %s: %s", self.name, exception)
 
                 self._client = None
 
@@ -367,7 +363,7 @@ class GoveeBluetoothLight(LightEntity):
                 _LOGGER.debug("Disconnecting from %s", self.name)
                 await self._client.disconnect()
         except Exception as exception:
-            pass
+            _LOGGER.error("Error disconnecting from %s: %s", exception)
 
         self._client = None
 
@@ -390,14 +386,12 @@ class GoveeBluetoothLight(LightEntity):
             return self._client.is_connected
         except Exception as exception:
             _LOGGER.error("Failed to connect to %s: %s", self.name, exception)
-            self._attr_extra_state_attributes["connection_status"] = "Disconnected"
             self._client = None
 
         return None
     
     async def _handle_disconnect(self):
         """Handle the device's disconnection."""
-        self._attr_extra_state_attributes["connection_status"] = "Disconnected"
         # self.async_write_ha_state()
     
 
@@ -410,7 +404,7 @@ class GoveeBluetoothLight(LightEntity):
             raise ValueError('Payload too long')
 
         _LOGGER.debug("Sending command %s with payload %s to %s", cmd, payload, self.name)
-        self.attr_extra_state_attributes["last_command"] = cmd
+        self._attr_extra_state_attributes["last_command"] = cmd
         # if ModelInfo.get_led_mode(self.model) != LedMode.MODE_1501:
         cmd = cmd & 0xFF
         payload = bytes(payload)
@@ -433,31 +427,14 @@ class GoveeBluetoothLight(LightEntity):
             _LOGGER.debug("Sent data to %s: %s", self.name, frame)
             return True
         except Exception as exception:
-            _LOGGER.error("Failed to send data to %s: %s", self.name, exception)
-            
+            _LOGGER.error("Error sending data to %s: %s", self.name, exception)
             try:
                 if self._client is not None:
                     _LOGGER.debug("Disconnecting from %s", self.name)
                     await self._client.disconnect()
             except Exception as exception:
-                pass
+                _LOGGER.error("Error disconnecting from %s: %s", self.name, exception)
 
             self._reconnect += 1
             self._client = None
         return False
-
-        client = await self._connect()
-        
-        if client and client.is_connected:
-            _LOGGER.debug("Connected to %s", self.name)
-            
-            self._attr_extra_state_attributes["client"] = client
-            await client.write_gatt_char(UUID_CONTROL_CHARACTERISTIC, frame, False)
-        else:
-            _LOGGER.debug("Failed to connect to %s", self.name)
-            self._attr_extra_state_attributes["connection_status"] = "Disconnected"
-            self._attr_extra_state_attributes["client"] = None
-        
-        current_time_string = time.strftime("%c")
-        self._attr_extra_state_attributes["update_status"] = f"updated: {current_time_string}"
-        # self.async_write_ha_state()  # Reflect the attribute changes immediately
