@@ -69,7 +69,7 @@ class GoveeBluetoothLight(LightEntity):
         self._ble_device = ble_device
         self._state = None
         self._is_on = False
-        self._brightness = None
+        self._brightness = 0
         self._rgb_color = [0,0,0]
         self._client = None
         
@@ -86,6 +86,10 @@ class GoveeBluetoothLight(LightEntity):
         self._keep_alive_task = None
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def model(self):
         return self._model
 
@@ -96,11 +100,11 @@ class GoveeBluetoothLight(LightEntity):
 
     @property
     def brightness(self):
-        return self._brightness
+        return self._brightness or 0
     
     @property
     def rgb_color(self):
-        return self._rgb_color
+        return self._rgb_color or [0,0,0]
 
     @property
     def is_on(self) -> bool | None:
