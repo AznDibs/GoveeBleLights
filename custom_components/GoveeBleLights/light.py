@@ -166,14 +166,12 @@ class GoveeBluetoothLight(LightEntity):
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
 
-            max_brightness = ModelInfo.get_brightness_max(self.model)
             self._temp_brightness = int(brightness / 255 * 100) # normalize to 100
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
         elif ATTR_BRIGHTNESS_PCT in kwargs:
             brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT, 100)
 
-            max_brightness = ModelInfo.get_brightness_max(self.model)
             self._temp_brightness = int(brightness_pct) # normalize to 100
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
@@ -320,7 +318,7 @@ class GoveeBluetoothLight(LightEntity):
                         elif self._ping_roll % 3 == 1:
                             _async_res = await self._send_brightness(self._temp_brightness);
                         elif self._ping_roll % 3 == 2:
-                            _async_res = await self._send_rgb_color(*self._temp_rgb_color);
+                            _async_res = await self._send_rgb_color(*self._rgb_color);
                         
                         if self._ping_roll > 15:
                             self._ping_roll = 0
