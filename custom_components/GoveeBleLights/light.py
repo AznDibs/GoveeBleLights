@@ -48,7 +48,7 @@ class GoveeBluetoothLight(LightEntity):
 
     ble_device: Optional[BLEDevice] = None
 
-    _attr_has_entity_nam = True
+    _attr_has_entity_name = True
     _attr_name = None
     _attr_color_mode = ColorMode.RGB
     _attr_min_color_temp_kelvin = 2000
@@ -65,7 +65,7 @@ class GoveeBluetoothLight(LightEntity):
         self._mac = light.address
         _LOGGER.debug("Config entry data: %s", config_entry.data)
         self.model = config_entry.data.get("model", "default")
-        # self._name = config_entry.data.get("name", self._model + "-" + self._mac.replace(":", "")[-4:])
+        self._name = config_entry.data.get("name", self._model + "-" + self._mac.replace(":", "")[-4:])
         self._ble_device = ble_device
         self._state = None
         self._is_on = False
@@ -115,9 +115,9 @@ class GoveeBluetoothLight(LightEntity):
                 # Serial numbers are unique identifiers within a specific domain
                 (DOMAIN, self.unique_id)
             },
-            name=self.name,
+            name=self._name,
             manufacturer="Govee",
-            model=self.model,
+            model=self._model,
         )
     
     async def async_added_to_hass(self):
