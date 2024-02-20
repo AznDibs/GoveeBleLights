@@ -57,6 +57,7 @@ class GoveeBluetoothLight(LightEntity):
     _attr_min_color_temp_kelvin = 2000
     _attr_max_color_temp_kelvin = 9000
     _attr_supported_color_modes = {
+            ColorMode.COLOR_TEMP_KELVIN,
             ColorMode.RGB,
         }
     
@@ -278,18 +279,21 @@ class GoveeBluetoothLight(LightEntity):
                         continue
 
                     self._dirty_state = False
+                    self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
                 elif self._dirty_brightness:
                     if not await self._send_brightness(self._brightness):
                         await asyncio.sleep(1);
                         continue
 
                     self._dirty_brightness = False
+                    self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
                 elif self._dirty_rgb_color:
                     if not await self._send_rgb_color(*self._rgb_color):
                         await asyncio.sleep(1);
                         continue
 
                     self._dirty_rgb_color = False
+                    self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
                 else:
                     """Keep alive, send a packet every 1 second."""
                     _changed = False # no mqtt packet if no change
