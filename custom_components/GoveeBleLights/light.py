@@ -264,7 +264,7 @@ class GoveeBleLight(LightEntity):
 
             self._mark_dirty("rgb_color", [red, green, blue])
 
-        self._controller.queue_update(self)
+        await self._controller.queue_update(self)
 
         if False and self._keep_alive_task:
             self._keep_alive_task.cancel()
@@ -290,6 +290,7 @@ class GoveeBleLight(LightEntity):
             _LOGGER.debug("Cancelled keep alive task for %s", self.name)
 
         self._mark_dirty("state", False)
+        await self._controller.queue_update(self)
 
         # self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
 
