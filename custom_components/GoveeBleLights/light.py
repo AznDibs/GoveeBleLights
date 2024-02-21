@@ -59,7 +59,7 @@ class GoveeBluetoothLight(LightEntity):
     _attr_supported_color_modes = {
             ColorMode.COLOR_TEMP,
             ColorMode.RGB,
-            ColorMode.BRIGHTNESS,
+            # ColorMode.BRIGHTNESS,
         }
     
 
@@ -153,10 +153,6 @@ class GoveeBluetoothLight(LightEntity):
             kwargs,
         )
 
-        if self._keep_alive_task:
-            self._keep_alive_task.cancel()
-            _LOGGER.debug("Cancelled keep alive task for %s", self.name)
-
 
         self._temp_state = True
         self._dirty_state = True
@@ -190,6 +186,13 @@ class GoveeBluetoothLight(LightEntity):
             self._temp_rgb_color = [red, green, blue]
             self._dirty_rgb_color = True
             self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
+
+
+        if self._keep_alive_task:
+            self._keep_alive_task.cancel()
+            self._dirty_brightness = True
+            self._dirty_rgb_color = True
+            _LOGGER.debug("Cancelled keep alive task for %s", self.name)
 
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
         # if self.client:
@@ -293,7 +296,7 @@ class GoveeBluetoothLight(LightEntity):
                         _LOGGER.error("Failed to connect to %s after %s attempts, ending thread", self.name, self.MAX_RECONNECT_ATTEMPTS)
                         return
 
-                    jitter = self.INITIAL_RECONNECT_DELAY + (self._reconnect * random.uniform(0.3, 1.1))
+                    jitter = self.INITIAL_RECONNECT_DELAY + (self._reconnect * random.uniform(0.3, 0.7))
                     await asyncio.sleep(jitter)
                     continue
 
