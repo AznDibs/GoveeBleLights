@@ -193,7 +193,7 @@ class GoveeBleLight(LightEntity):
             manufacturer="Govee",
             model=self._model,
             serial_number=self.mac_address,
-            via_device= (DOMAIN, self._hub_device.identifiers),
+            via_device= (DOMAIN, "controller"),
         )
 
     def set_state_attr(self, attr, value):
