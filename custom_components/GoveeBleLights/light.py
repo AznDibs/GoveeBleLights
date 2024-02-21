@@ -27,7 +27,7 @@ from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.color import value_to_brightness
-from homeassistant.util.color import percentage_to_ranged_value
+from homeassistant.util.color import brightness_to_value
 
 from .const import DOMAIN
 from .models import LedCommand, LedMode, ControlMode, ModelInfo
@@ -221,7 +221,7 @@ class GoveeBluetoothLight(LightEntity):
 
         if ATTR_BRIGHTNESS in kwargs:
             brightness = clamp(kwargs[ATTR_BRIGHTNESS], 0, 255)
-            brightness = int(math.ceil(percentage_to_ranged_value(self._BRIGHTNESS_SCALE, brightness)))
+            brightness = int(math.ceil(brightness_to_value(self._BRIGHTNESS_SCALE, brightness)))
             
             self._mark_dirty("brightness", brightness)
         '''
