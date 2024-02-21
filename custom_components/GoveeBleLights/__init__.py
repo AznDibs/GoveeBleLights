@@ -62,11 +62,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     address = entry.unique_id
     assert address is not None
 
-    # Retrieve or create the shared controller (hub)
-    if DOMAIN not in hass.data:
-        hass.data[DOMAIN] = {
-            "controller": GoveeBluetoothController(hass)
-        }
+    # Initialize or retrieve the shared controller.
+    if 'controller' not in hass.data.get(DOMAIN, {}):
+        hass.data.setdefault(DOMAIN, {})['controller'] = GoveeBluetoothController(hass)
+
+    controller = hass.data[DOMAIN]['controller']
 
     # controller = hass.data[DOMAIN]["controller"]
 
@@ -75,10 +75,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not ble_device:
         raise ConfigEntryNotReady(f"Could not find LED BLE device with address {address}")
 
-    # Store BLE device and other relevant info in hass.data for use in the platform setup
+    # Store BLE device and other relevant info in hass.data for use in the platform setup.
     hass.data[DOMAIN][entry.entry_id] = {
         "ble_device": ble_device,
         "address": address,
+        "controller": controller,  # Store the controller for use in platform setup.
     }
 
     hass.async_create_task(

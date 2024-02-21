@@ -42,27 +42,30 @@ def clamp(value, min_value, max_value):
 
 async def async_setup_entry(
         hass: HomeAssistant,
-        config_entry: ConfigEntry, 
+        entry: ConfigEntry, 
         async_add_entities: AddEntitiesCallback,
     ) -> None:
     """Set up the light from a config entry."""
-    controller = hass.data[DOMAIN]["controller"]
+    """Set up GoveeBleLight from a config entry."""
+    controller = hass.data[DOMAIN][entry.entry_id]['controller']
+    ble_device = hass.data[DOMAIN][entry.entry_id]['ble_device']
+    address = hass.data[DOMAIN][entry.entry_id]['address']
 
-    light = hass.data[DOMAIN][config_entry.entry_id]
+    light = hass.data[DOMAIN][entry.entry_id]
 
     #bluetooth setup
     ble_device = bluetooth.async_ble_device_from_address(hass, light.address.upper(), False)
 
     async_add_entities([
-        GoveeBluetoothLight(
+        GoveeBleLight(
             hass,
             light, 
             ble_device, 
-            config_entry,
-            controller,
+            entry,
+            controller=controller,
             )])
 
-class GoveeBluetoothLight(LightEntity):
+class GoveeBleLight(LightEntity):
     MAX_RECONNECT_ATTEMPTS = 5
     INITIAL_RECONNECT_DELAY = 1 # seconds
 
