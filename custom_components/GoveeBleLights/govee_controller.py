@@ -1,4 +1,5 @@
 from __future__ import annotations
+from re import S
 import time
 from datetime import datetime
 import homeassistant.util.dt as dt_util
@@ -19,8 +20,9 @@ UUID_CONTROL_CHARACTERISTIC = '00010203-0405-0607-0809-0a0b0c0d2b11'
 
 
 class GoveeBluetoothController:
-    def __init__(self, hass: HomeAssistant):
+    def __init__(self, hass: HomeAssistant, address: str) -> None:
         self._hass = hass
+        self._address = address
         # Config attributes
         self._MAX_RECONNECT_ATTEMPTS = 5
         self._KEEP_ALIVE_PACKET_INTERVAL = 0.3

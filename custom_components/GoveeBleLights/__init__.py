@@ -64,7 +64,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Initialize or retrieve the shared controller.
     if 'controller' not in hass.data.get(DOMAIN, {}):
-        hass.data.setdefault(DOMAIN, {})['controller'] = GoveeBluetoothController(hass)
+        hass.data.setdefault(DOMAIN, {})['controller'] = GoveeBluetoothController(hass, address)
 
     controller = hass.data[DOMAIN]['controller']
 
@@ -83,7 +83,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, PLATFORMS)
+        hass.config_entries.async_forward_entry_setup(entry, 'light')
     )
 
     return True

@@ -4,6 +4,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_ADDRESS, CONF_MODEL, CONF_NAME
 from homeassistant.helpers import aiohttp_client
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak, async_discovered_service_info
@@ -12,8 +13,8 @@ from homeassistant.data_entry_flow import FlowResult
 from .const import DOMAIN
 from .models import ModelInfo
 
-@config_entries.HANDLERS.register(DOMAIN)
-class GoveeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+
+class GoveeConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
 
