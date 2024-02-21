@@ -18,6 +18,7 @@ class LedMode(IntEnum):
     MICROPHONE = 0x06
     SCENES     = 0x05 
 
+
 class ControlMode(IntEnum):
     COLOR       = 0x01
     TEMPERATURE = 0x02
@@ -41,3 +42,5 @@ class ModelInfo:
     @staticmethod
     def get_brightness_max(model):
         return ModelInfo.MODELS.get(model, ModelInfo.MODELS["default"])[1]
+    
+

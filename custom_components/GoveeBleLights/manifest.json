@@ -1,13 +1,13 @@
 {
     "domain": "govee_ble_lights",
     "name": "Govee BLE Lights",
-    "integration_type": "device",
+    "integration_type": "hub",
     "bluetooth": [
         { "local_name": "ihoment_*", "connectable": false },
         { "local_name": "Govee_*", "connectable": false },
         { "local_name": "H6072**", "connectable": false },
         {
-            "service_uuid": "00010203-0405-0607-0809-0a0b0c0d2b11", "connectable": false
+            "service_uuid": "00010203-0405-0607-0809-0a0b0c0d1910", "connectable": false
         }
     ],
     "codeowners": ["@AznDibs"],
