@@ -6,7 +6,6 @@ import asyncio
 import logging
 import random
 
-from custom_components.GoveeBleLights.govee_controller import GoveeBluetoothController
 _LOGGER = logging.getLogger(__name__)
 
 from enum import IntEnum
