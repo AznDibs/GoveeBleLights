@@ -99,6 +99,7 @@ class GoveeBleLight(LightEntity):
         _LOGGER.debug("Config entry data: %s", config_entry.data)
         self._hass = hass
         self._mac = address
+        self._hub_device = hub_device
         self._model = config_entry.data.get("model", "default")
         self._name = config_entry.data.get("name", self._model + "-" + self._mac.replace(":", "")[-4:])
         self._ble_device = ble_device
@@ -192,7 +193,7 @@ class GoveeBleLight(LightEntity):
             manufacturer="Govee",
             model=self._model,
             serial_number=self.mac_address,
-            via_device= (DOMAIN, self._controller.unique_id),
+            via_device= (DOMAIN, self._hub_device.unique_id),
         )
 
     def set_state_attr(self, attr, value):
