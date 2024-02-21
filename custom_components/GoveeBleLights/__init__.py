@@ -9,6 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_MODEL, CONF_NAME
 from .const import DOMAIN
 
 from .govee_controller import GoveeBluetoothController
+from .light import GoveeBleLight
 
 PLATFORMS: list[str] = ["light"]
 
