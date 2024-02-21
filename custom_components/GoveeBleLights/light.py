@@ -32,7 +32,7 @@ from .kelvin_rgb import kelvin_to_rgb
 
 UUID_CONTROL_CHARACTERISTIC = '00010203-0405-0607-0809-0a0b0c0d2b11'
 
-PARALLEL_UPDATES = 1
+PARALLEL_UPDATES = 10
 
 async def async_setup_entry(
         hass: HomeAssistant,
