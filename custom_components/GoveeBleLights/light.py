@@ -81,7 +81,7 @@ class GoveeBleLight(LightEntity):
             # ColorMode.BRIGHTNESS,
         }
     
-    def __init__(self, hass, light, ble_device, config_entry: ConfigEntry, controller: GoveeBluetoothController) -> None:
+    def __init__(self, hass, light, ble_device, config_entry: ConfigEntry, controller) -> None:
         """Initialize an bluetooth light."""
         _LOGGER.debug("Config entry data: %s", config_entry.data)
         self._hass = hass
