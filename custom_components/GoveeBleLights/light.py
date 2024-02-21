@@ -51,6 +51,7 @@ async def async_setup_entry(
     controller = hass.data[DOMAIN][entry.entry_id]['controller']
     ble_device = hass.data[DOMAIN][entry.entry_id]['ble_device']
     address = hass.data[DOMAIN][entry.entry_id]['address']
+    hub_device = hass.data[DOMAIN][entry.entry_id]['hub_device']
 
     light = hass.data[DOMAIN][entry.entry_id]
 
@@ -65,6 +66,7 @@ async def async_setup_entry(
             ble_device, 
             entry,
             controller=controller,
+            hub_device=hub_device,
             )])
 
 class GoveeBleLight(LightEntity):
@@ -83,7 +85,16 @@ class GoveeBleLight(LightEntity):
             # ColorMode.BRIGHTNESS,
         }
     
-    def __init__(self, hass, light, address, ble_device, config_entry: ConfigEntry, controller: GoveeBluetoothController) -> None:
+    def __init__(
+            self, 
+            hass, 
+            light, 
+            address, 
+            ble_device, 
+            config_entry: ConfigEntry, 
+            controller: GoveeBluetoothController,
+            hub_device,
+            ) -> None:
         """Initialize an bluetooth light."""
         _LOGGER.debug("Config entry data: %s", config_entry.data)
         self._hass = hass
@@ -181,6 +192,7 @@ class GoveeBleLight(LightEntity):
             manufacturer="Govee",
             model=self._model,
             serial_number=self.mac_address,
+            via_device= (DOMAIN, self._controller.unique_id),
         )
 
     def set_state_attr(self, attr, value):
@@ -205,9 +217,8 @@ class GoveeBleLight(LightEntity):
         if dirty:
             setattr(self, f"_temp_{property_name}", value)
             # Notify controller that light has pending updates
-            self._hass.async_create_task(self._controller.queue_update(self))
 
-    def clear_dirty_state(self, property_name):
+    def mark_clean(self, property_name):
         setattr(self, f"_dirty_{property_name}", False)
         self.set_state_attr(f"dirty_{property_name}", False)
 
@@ -251,6 +262,8 @@ class GoveeBleLight(LightEntity):
             red, green, blue = kelvin_to_rgb(kelvin)
 
             self._mark_dirty("rgb_color", [red, green, blue])
+
+        self._controller.queue_update(self)
 
         if False and self._keep_alive_task:
             self._keep_alive_task.cancel()

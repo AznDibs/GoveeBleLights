@@ -5,7 +5,7 @@
     "bluetooth": [
         { "local_name": "ihoment_*", "connectable": false },
         { "local_name": "Govee_*", "connectable": false },
-        { "local_name": "H6072**", "connectable": false },
+        { "local_name": "H6072*", "connectable": false },
         {
             "service_uuid": "00010203-0405-0607-0809-0a0b0c0d1910", "connectable": false
         }

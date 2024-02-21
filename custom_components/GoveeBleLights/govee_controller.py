@@ -143,13 +143,19 @@ class GoveeBluetoothController:
 
                 if light._dirty_state:
                     cmd, payload = light.get_power_payload()
-                    await self._async_send_data(light, cmd, payload)
+                    result = await self._async_send_data(light, cmd, payload)
+                    if result:
+                        light.mark_clean("state")
                 elif light._dirty_brightness:
                     cmd, payload = light.get_brightness_payload()
-                    await self._async_send_data(light, cmd, payload)
+                    result = await self._async_send_data(light, cmd, payload)
+                    if result:
+                        light.mark_clean("brightness")
                 elif light._dirty_rgb_color:
                     cmd, payload = light.get_rgb_color_payload()
-                    await self._async_send_data(light, cmd, payload)
+                    result = await self._async_send_data(light, cmd, payload)
+                    if result:
+                        light.mark_clean("rgb_color")
                 else: # No updates needed
                     attempt = 0
                     light.set_state_attr("send_packet_attempts", attempt)
