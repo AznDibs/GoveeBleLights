@@ -160,13 +160,13 @@ class GoveeBluetoothLight(LightEntity):
 
 
         if ATTR_BRIGHTNESS in kwargs:
-            brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
+            brightness = max(min(kwargs.get(ATTR_BRIGHTNESS, 255), 255), 0)
 
             self._temp_brightness = brightness
             self._dirty_brightness = True
             self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
         elif ATTR_BRIGHTNESS_PCT in kwargs:
-            brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT, 100)
+            brightness_pct = max(min(kwargs.get(ATTR_BRIGHTNESS_PCT, 100), 100), 0)
 
             self._temp_brightness = brightness_pct * 255 / 100
             self._dirty_brightness = True
@@ -174,12 +174,19 @@ class GoveeBluetoothLight(LightEntity):
 
         if ATTR_RGB_COLOR in kwargs:
             red, green, blue = kwargs.get(ATTR_RGB_COLOR)
+            # santize the values
+            red = max(min(red, 255), 0)
+            green = max(min(green, 255), 0)
+            blue = max(min(blue, 255), 0)
 
             self._temp_rgb_color = [red, green, blue]
             self._dirty_rgb_color = True
             self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
         elif ATTR_COLOR_TEMP in kwargs:
             color_temp = kwargs.get(ATTR_COLOR_TEMP)
+            #sanitize the values
+            color_temp = max(min(color_temp, self._attr_max_color_temp_kelvin), self._attr_min_color_temp_kelvin)
+
             kelvin = int(1000000 / color_temp)
             kelvin = max(min(kelvin, self._attr_max_color_temp_kelvin), self._attr_min_color_temp_kelvin)
             red, green, blue = kelvin_to_rgb(kelvin)
@@ -190,6 +197,12 @@ class GoveeBluetoothLight(LightEntity):
 
         if self._keep_alive_task:
             self._keep_alive_task.cancel()
+            self._temp_brightness = max(min(self._temp_brightness, 255), 0)
+            self._temp_rgb_color = [
+                max(min(self._temp_rgb_color[0], 255), 0), 
+                max(min(self._temp_rgb_color[1], 255), 0), 
+                max(min(self._temp_rgb_color[2], 255), 0)
+            ]
             self._dirty_brightness = True
             self._dirty_rgb_color = True
             _LOGGER.debug("Cancelled keep alive task for %s", self.name)
@@ -378,7 +391,8 @@ class GoveeBluetoothLight(LightEntity):
                 jitter = random.uniform(0.7, 1.3)
                 await asyncio.sleep(jitter)
         
-
+        if self._client is not None:
+            await self._disconnect()
         _LOGGER.debug("Thread for %s ended", self.name)
 
 
