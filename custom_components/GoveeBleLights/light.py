@@ -55,12 +55,13 @@ async def async_setup_entry(
     light = hass.data[DOMAIN][entry.entry_id]
 
     #bluetooth setup
-    ble_device = bluetooth.async_ble_device_from_address(hass, light.address.upper(), False)
+    # ble_device = bluetooth.async_ble_device_from_address(hass, light.address.upper(), False)
 
     async_add_entities([
         GoveeBleLight(
             hass,
             light, 
+            address,
             ble_device, 
             entry,
             controller=controller,
@@ -82,11 +83,11 @@ class GoveeBleLight(LightEntity):
             # ColorMode.BRIGHTNESS,
         }
     
-    def __init__(self, hass, light, ble_device, config_entry: ConfigEntry, controller: GoveeBluetoothController) -> None:
+    def __init__(self, hass, light, address, ble_device, config_entry: ConfigEntry, controller: GoveeBluetoothController) -> None:
         """Initialize an bluetooth light."""
         _LOGGER.debug("Config entry data: %s", config_entry.data)
         self._hass = hass
-        self._mac = light.address
+        self._mac = address
         self._model = config_entry.data.get("model", "default")
         self._name = config_entry.data.get("name", self._model + "-" + self._mac.replace(":", "")[-4:])
         self._ble_device = ble_device
