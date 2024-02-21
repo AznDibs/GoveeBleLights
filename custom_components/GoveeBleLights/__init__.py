@@ -5,7 +5,7 @@ from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.const import CONF_ADDRESS, CONF_MODEL, CONF_NAME
-from homeassistant.helpers.device_registry import async_get_registry as async_get_device_registry
+from homeassistant.helpers.device_registry import async_get
 
 from .const import DOMAIN
 
@@ -76,10 +76,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not ble_device:
         raise ConfigEntryNotReady(f"Could not find LED BLE device with address {address}")
 
-    device_registry = await async_get_device_registry(hass)
+    device_registry = await async_get(hass)
     hub_device = device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, "controller_" + address)},
+        identifiers={(DOMAIN, "controller")},
         name="Govee Controller",
         manufacturer="AznDibs",
     )
