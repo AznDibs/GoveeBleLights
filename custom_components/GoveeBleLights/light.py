@@ -5,6 +5,8 @@ import math
 import asyncio
 import logging
 import random
+
+from custom_components.GoveeBleLights.govee_controller import GoveeBluetoothController
 _LOGGER = logging.getLogger(__name__)
 
 from enum import IntEnum
@@ -81,7 +83,7 @@ class GoveeBleLight(LightEntity):
             # ColorMode.BRIGHTNESS,
         }
     
-    def __init__(self, hass, light, ble_device, config_entry: ConfigEntry, controller) -> None:
+    def __init__(self, hass, light, ble_device, config_entry: ConfigEntry, controller: GoveeBluetoothController) -> None:
         """Initialize an bluetooth light."""
         _LOGGER.debug("Config entry data: %s", config_entry.data)
         self._hass = hass
