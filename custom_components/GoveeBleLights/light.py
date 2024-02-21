@@ -32,7 +32,6 @@ from homeassistant.util.color import brightness_to_value
 from .const import DOMAIN
 from .models import LedCommand, LedMode, ControlMode, ModelInfo
 from .kelvin_rgb import kelvin_to_rgb
-from .govee_controller import GoveeBluetoothController
 
 UUID_CONTROL_CHARACTERISTIC = '00010203-0405-0607-0809-0a0b0c0d2b11'
 
@@ -79,7 +78,8 @@ class GoveeBluetoothLight(LightEntity):
             # ColorMode.BRIGHTNESS,
         }
     
-
+    
+    from .govee_controller import GoveeBluetoothController
 
     def __init__(self, hass, light, ble_device, config_entry: ConfigEntry, controller: GoveeBluetoothController) -> None:
         """Initialize an bluetooth light."""
