@@ -295,7 +295,7 @@ class GoveeBluetoothLight(LightEntity):
                         _WG,
                         _WB,
                         0xFF,
-                        0x74,
+                        0xFF,
                     ])
                     """
                         proven to work,  but let's see if the new method is better
