@@ -264,7 +264,7 @@ class GoveeBluetoothLight(LightEntity):
         _WG = 0;
         _WB = 0;
 
-        if self._control_mode == ControlMode.TEMPERATURE:
+        if self._control_mode == ControlMode.TEMPERATURE and ModelInfo.get_led_mode(self.model) != LedMode.MODE_1501:
             _R = _G = _B = 0xFF;
             _TK = int(self._temperature);
             pass
@@ -284,6 +284,7 @@ class GoveeBluetoothLight(LightEntity):
             _payload = [ModelInfo.get_led_mode(self.model)]
 
             if ModelInfo.get_led_mode(self.model) == LedMode.MODE_1501:
+                    """
                     _payload.extend([
                         0x01,
                         _R,
@@ -298,12 +299,11 @@ class GoveeBluetoothLight(LightEntity):
                         0,
                     ])
                     """
-                        proven to work,  but let's see if the new method is better
                         _payload.extend([
                         0x01,
-                        self.R,
-                        self.G,
-                        self.B,
+                        _R,
+                        _G,
+                        _B,
                         0x00,
                         0x00,
                         0x00,
@@ -311,7 +311,7 @@ class GoveeBluetoothLight(LightEntity):
                         0x00,
                         0xFF,
                         0x74,
-                    ]) """
+                    ])
             else: #MODE_D and MODE_2
                 _payload.extend([
                     _R,
