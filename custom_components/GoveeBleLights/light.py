@@ -77,7 +77,7 @@ class GoveeBluetoothLight(LightEntity):
         self._ble_device = ble_device
         self._state = None
         self._is_on = False
-        self._brightness = 0
+        self._brightness = 255
         self._temperature = 4000
         self._rgb_color = [255,255,255]
         self._client = None
