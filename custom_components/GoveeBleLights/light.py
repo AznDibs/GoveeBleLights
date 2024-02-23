@@ -208,7 +208,7 @@ class GoveeBluetoothLight(LightEntity):
             self._dirty_color = True
             red, green, blue = kelvin_to_rgb(kelvin)
             self._temp_rgb_color = [red, green, blue]
-            self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
+            self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_color
 
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
         # if self.client:
