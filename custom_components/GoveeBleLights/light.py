@@ -142,8 +142,6 @@ class GoveeBluetoothLight(LightEntity):
             manufacturer="Govee",
             model=self._model,
         )
-    
-    def set_color_temp_mired(self, temperature)
 
     async def async_added_to_hass(self):
         """Run when entity about to be added to hass."""
