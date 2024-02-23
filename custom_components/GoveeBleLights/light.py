@@ -90,6 +90,11 @@ class GoveeBluetoothLight(LightEntity):
         self._dirty_brightness = False
         self._dirty_color = False
 
+        self._temp_rgb_color = [255,255,255]
+        self._temp_brightness = 255
+        self._temp_state = False
+        
+
         self._power_data = 0x0
         self._brightness_data = 0x0
         self._rgb_color_data = [0,0,0]
@@ -251,9 +256,9 @@ class GoveeBluetoothLight(LightEntity):
 
     async def _send_rgb_color(self):
 
-        _R = self._rgb_color[0];
-        _G = self._rgb_color[1];
-        _B = self._rgb_color[2];
+        _R = self._temp_rgb_color[0];
+        _G = self._temp_rgb_color[1];
+        _B = self._temp_rgb_color[2];
 
         _TK = 0;
         _WR = 0;
