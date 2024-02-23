@@ -201,7 +201,7 @@ class GoveeBluetoothLight(LightEntity):
             self._temperature = kelvin
             self._dirty_color = True
             # red, green, blue = kelvin_to_rgb(kelvin)
-            # self._temp_rgb_color = [red, green, blue]
+            self._temp_rgb_color = self._rgb_color #[red, green, blue]
             # self._dirty_rgb_color = True
             # self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
 
@@ -249,13 +249,11 @@ class GoveeBluetoothLight(LightEntity):
         return False
     
 
-    async def _send_rgb_color(self, red, green, blue):
-        
-        self._attr_extra_state_attributes["rgb_color_data"] = [red, green, blue]
+    async def _send_rgb_color(self):
 
-        _R = red;
-        _G = green;
-        _B = blue;
+        _R = self._rgb_color[0];
+        _G = self._rgb_color[1];
+        _B = self._rgb_color[2];
 
         _TK = 0;
         _WR = 0;
@@ -265,6 +263,9 @@ class GoveeBluetoothLight(LightEntity):
         if self._control_mode == ControlMode.TEMPERATURE:
             _R = _G = _B = 0xFF;
             _TK = int(self._temperature);
+        self._attr_extra_state_attributes["rgb_color_data"] = [_R,_G,_B]
+        self._attr_extra_state_attributes["control_mode"] = self._control_mode
+        self._attr_extra_state_attributes["temperature"] = self._temperature
         
         if not isinstance(_R, int) or _R < 0 or _R > 255:
             return ValueError("Invalid r");
@@ -364,7 +365,7 @@ class GoveeBluetoothLight(LightEntity):
                     self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
                     self._brightness = self._temp_brightness
                 elif self._dirty_color:
-                    if not await self._send_rgb_color(*self._temp_rgb_color):
+                    if not await self._send_rgb_color():
                         await asyncio.sleep(1);
                         continue
 
