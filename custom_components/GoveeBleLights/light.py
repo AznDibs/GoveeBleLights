@@ -264,7 +264,7 @@ class GoveeBluetoothLight(LightEntity):
         _WG = 0;
         _WB = 0;
 
-        if self._control_mode == ControlMode.TEMPERATURE and ModelInfo.get_led_mode(self.model) != LedMode.MODE_1501:
+        if self._control_mode == ControlMode.TEMPERATURE:
             _R = _G = _B = 0xFF;
             _TK = int(self._temperature);
             pass
@@ -284,7 +284,7 @@ class GoveeBluetoothLight(LightEntity):
             _payload = [ModelInfo.get_led_mode(self.model)]
 
             if ModelInfo.get_led_mode(self.model) == LedMode.MODE_1501:
-                    """
+                    
                     _payload.extend([
                         0x01,
                         _R,
@@ -311,7 +311,7 @@ class GoveeBluetoothLight(LightEntity):
                         0x00,
                         0xFF,
                         0x74,
-                    ])
+                    ])"""
             else: #MODE_D and MODE_2
                 _payload.extend([
                     _R,
@@ -325,7 +325,7 @@ class GoveeBluetoothLight(LightEntity):
                 ])
                 #_payload.extend([red, green, blue])
             
-                return await self._send_bluetooth_data(LedCommand.COLOR, _payload)
+            return await self._send_bluetooth_data(LedCommand.COLOR, _payload)
             
         except Exception as exception:
             _LOGGER.error("Error sending color to %s: %s", self.name, exception)
