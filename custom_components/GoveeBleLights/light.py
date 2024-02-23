@@ -63,7 +63,6 @@ class GoveeBluetoothLight(LightEntity):
     _attr_supported_color_modes = {
             ColorMode.COLOR_TEMP,
             ColorMode.RGB,
-            ColorMode.BRIGHTNESS,
         }
     
 
@@ -202,7 +201,7 @@ class GoveeBluetoothLight(LightEntity):
             color_temp = kwargs.get(ATTR_COLOR_TEMP)
             kelvin = (1000000 / color_temp)
 
-            kelvin = clamp(kelvin, self._attr_max_color_temp_kelvin, self._attr_min_color_temp_kelvin)
+            kelvin = clamp(kelvin, self._attr_min_color_temp_kelvin, self._attr_max_color_temp_kelvin)
             self._control_mode = ControlMode.TEMPERATURE
             self._temperature = kelvin
             self._dirty_color = True
@@ -266,8 +265,8 @@ class GoveeBluetoothLight(LightEntity):
         _WB = 0;
 
         if self._control_mode == ControlMode.TEMPERATURE:
-            # _R = _G = _B = 0xFF;
-            # _TK = int(self._temperature);
+            _R = _G = _B = 0xFF;
+            _TK = int(self._temperature);
             pass
         self._attr_extra_state_attributes["rgb_color_data"] = [_R,_G,_B]
         self._attr_extra_state_attributes["control_mode"] = self._control_mode
