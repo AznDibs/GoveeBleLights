@@ -379,7 +379,6 @@ class GoveeBluetoothLight(LightEntity):
                     self._rgb_color = self._temp_rgb_color
                 else:
                     """Keep alive, send a packet every 1 second."""
-                    task_running = False
                     _changed = False # no mqtt packet if no change
 
 
@@ -394,7 +393,9 @@ class GoveeBluetoothLight(LightEntity):
                         elif self._ping_roll % 3 == 2:
                             _async_res = await self._send_rgb_color(*self._rgb_color);
                         
-                        if self._ping_roll > 15:
+                        task_running = False
+                        
+                        if self._ping_roll > 3:
                             self._ping_roll = 0
                             if self._client is not None:
                                 await self._client.disconnect()
@@ -412,6 +413,7 @@ class GoveeBluetoothLight(LightEntity):
 
             except Exception as exception:
                 _LOGGER.error("Error sending packets to %s: %s", self.name, exception)
+                task_running = False
                 try:
                     if self._client is not None:
                         await self._client.disconnect()
