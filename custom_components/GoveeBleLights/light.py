@@ -206,9 +206,9 @@ class GoveeBluetoothLight(LightEntity):
             self._control_mode = ControlMode.TEMPERATURE
             self._temperature = kelvin
             self._dirty_color = True
-            # red, green, blue = kelvin_to_rgb(kelvin)
-            self._temp_rgb_color = self._rgb_color #[red, green, blue]
-            # self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
+            red, green, blue = kelvin_to_rgb(kelvin)
+            self._temp_rgb_color = [red, green, blue]
+            self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
 
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
         # if self.client:
@@ -266,8 +266,9 @@ class GoveeBluetoothLight(LightEntity):
         _WB = 0;
 
         if self._control_mode == ControlMode.TEMPERATURE:
-            _R = _G = _B = 0xFF;
-            _TK = int(self._temperature);
+            # _R = _G = _B = 0xFF;
+            # _TK = int(self._temperature);
+            pass
         self._attr_extra_state_attributes["rgb_color_data"] = [_R,_G,_B]
         self._attr_extra_state_attributes["control_mode"] = self._control_mode
         self._attr_extra_state_attributes["temperature"] = self._temperature
@@ -393,9 +394,9 @@ class GoveeBluetoothLight(LightEntity):
                         elif self._ping_roll % 3 == 2:
                             _async_res = await self._send_rgb_color(*self._rgb_color);
                         
-                        task_running = False
                         
                         if self._ping_roll > 3:
+                            task_running = False
                             self._ping_roll = 0
                             if self._client is not None:
                                 await self._client.disconnect()
