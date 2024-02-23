@@ -93,7 +93,7 @@ class GoveeBluetoothLight(LightEntity):
         self._temp_rgb_color = [255,255,255]
         self._temp_brightness = 255
         self._temp_state = False
-        
+
 
         self._power_data = 0x0
         self._brightness_data = 0x0
@@ -203,11 +203,11 @@ class GoveeBluetoothLight(LightEntity):
             kelvin = (1000000 / color_temp)
 
             kelvin = clamp(kelvin, self._attr_max_color_temp_kelvin, self._attr_min_color_temp_kelvin)
+            self._control_mode = ControlMode.TEMPERATURE
             self._temperature = kelvin
             self._dirty_color = True
             # red, green, blue = kelvin_to_rgb(kelvin)
             self._temp_rgb_color = self._rgb_color #[red, green, blue]
-            # self._dirty_rgb_color = True
             # self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_rgb_color
 
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
