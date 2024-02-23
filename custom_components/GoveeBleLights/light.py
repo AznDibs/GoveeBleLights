@@ -5,7 +5,7 @@ import asyncio
 import logging
 import random
 _LOGGER = logging.getLogger(__name__)
-
+import math
 from enum import IntEnum
 import time
 import bleak_retry_connector
@@ -25,7 +25,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.util.color import value_to_brightness, brightness_to_pct
 
 
 from .const import DOMAIN
@@ -238,7 +237,7 @@ class GoveeBluetoothLight(LightEntity):
     async def _send_brightness(self, brightness):
         """Send the brightness to the device."""
         max_brightness = ModelInfo.get_brightness_max(self.model)
-        brightness = int(brightness / 255 * max_brightness)
+        brightness = math.floor(brightness / 255 * max_brightness)
         self._attr_extra_state_attributes["brightness_data"] = brightness
         _packet = [brightness]
         try:
