@@ -299,7 +299,7 @@ class GoveeBluetoothLight(LightEntity):
                         0,
                     ])
                     """
-                        _payload.extend([
+                    _payload.extend([
                         0x01,
                         _R,
                         _G,
