@@ -215,7 +215,7 @@ class GoveeBluetoothLight(LightEntity):
 
             kelvin = clamp(kelvin, self._attr_min_color_temp_kelvin, self._attr_max_color_temp_kelvin)
             self._control_mode = ControlMode.TEMPERATURE
-            self._temperature = kelvin
+            self._temperature = int(kelvin)
             self._dirty_color = True
             red, green, blue = kelvin_to_rgb(kelvin)
             self._temp_rgb_color = [red, green, blue]
