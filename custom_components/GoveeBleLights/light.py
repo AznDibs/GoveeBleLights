@@ -162,7 +162,6 @@ class GoveeBluetoothLight(LightEntity):
         """Run when entity about to be added to hass."""
         _LOGGER.debug("Adding %s", self.name)
         # await self._connect()
-        self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
         _LOGGER.debug("Initialized %s", self.name)
 
     async def async_will_remove_from_hass(self):
