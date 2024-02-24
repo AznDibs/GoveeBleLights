@@ -35,6 +35,15 @@ UUID_CONTROL_CHARACTERISTIC = '00010203-0405-0607-0809-0a0b0c0d2b11'
 
 PARALLEL_UPDATES = 1
 
+MAX_ACTIVE_DEVICES = 12
+
+# devices trying to connect
+queued_devices = {}
+# devices connected and sending packets
+active_devices = {}
+# devices connected but not needed
+stale_devices = {}
+
 def clamp(value, min_value, max_value):
     return max(min(value, max_value), min_value)
 
@@ -265,8 +274,11 @@ class GoveeBluetoothLight(LightEntity):
         _WB = 0;
 
         if self._control_mode == ControlMode.TEMPERATURE:
-            _R = _G = _B = 0xFF;
+            max_brightness = ModelInfo.get_brightness_max(self.model)
+            brightness = math.floor(self._brightness / 255 * max_brightness)
+            _R = _G = _B = 0xFF * brightness;
             _TK = int(self._temperature);
+            self._temp_rgb_color = [_R,_G,_B]
             pass
         self._attr_extra_state_attributes["rgb_color_data"] = [_R,_G,_B]
         self._attr_extra_state_attributes["control_mode"] = self._control_mode
@@ -336,6 +348,47 @@ class GoveeBluetoothLight(LightEntity):
     def is_dirty(self):
         return self._dirty_state or self._dirty_brightness or self._dirty_color
 
+    def _add_to_queue(self):
+        """Add the device to the queue."""
+        if active_devices.get(self._ble_device):
+            active_devices.pop(self._ble_device)
+        if stale_devices.get(self._ble_device):
+            stale_devices.pop(self._ble_device)
+        if not queued_devices.get(self._ble_device):
+            queued_devices[self._ble_device] = self
+        self._attr_extra_state_attributes["ble_status"] = "Queued"
+    
+    def _add_to_active(self):
+        """Add the device to the active devices."""
+        if queued_devices.get(self._ble_device):
+            queued_devices.pop(self._ble_device)
+        if stale_devices.get(self._ble_device):
+            stale_devices.pop(self._ble_device)
+        if not active_devices.get(self._ble_device):
+            active_devices[self._ble_device] = self
+        self._attr_extra_state_attributes["ble_status"] = "Active"
+
+    def _add_to_stale(self):
+        """Add the device to the stale devices."""
+        if queued_devices.get(self._ble_device):
+            queued_devices.pop(self._ble_device)
+        if active_devices.get(self._ble_device):
+            active_devices.pop(self._ble_device)
+        if not stale_devices.get(self._ble_device):
+            stale_devices[self._ble_device] = self
+        self._attr_extra_state_attributes["ble_status"] = "Stale"
+
+    def _remove_device_from_dicts(self):
+        """Remove the device from the dictionaries."""
+        if queued_devices.get(self._ble_device):
+            queued_devices.pop(self._ble_device)
+        if active_devices.get(self._ble_device):
+            active_devices.pop(self._ble_device)
+        if stale_devices.get(self._ble_device):
+            stale_devices.pop(self._ble_device)
+        self._attr_extra_state_attributes["ble_status"] = "Removed"
+
+
     async def _send_packets_thread(self):
         """Send the packets to the device."""
         task_running = True
@@ -346,10 +399,14 @@ class GoveeBluetoothLight(LightEntity):
                 """Connect to the device."""
                 if not await self._connect():
 
+                    self._add_to_queue()
+
                     await asyncio.sleep(2)
                     continue
 
                 _changed = True # send mqtt packet once mqtt is implemented
+
+                self._add_to_active()
             
                 """Send the packets."""
                 if self._dirty_state:
@@ -360,9 +417,7 @@ class GoveeBluetoothLight(LightEntity):
                     self._dirty_state = False
                     self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
                     self._state = self._temp_state
-
-                
-                if self._dirty_brightness:
+                elif self._dirty_brightness:
                     if not await self._send_brightness(self._temp_brightness):
                         await asyncio.sleep(1);
                         continue
@@ -382,6 +437,7 @@ class GoveeBluetoothLight(LightEntity):
                     """Keep alive, send a packet every 1 second."""
                     _changed = False # no mqtt packet if no change
 
+                    self._add_to_stale()
 
                     if (time.time() - self._last_update) >= 1:
                         _async_res = False
@@ -395,7 +451,9 @@ class GoveeBluetoothLight(LightEntity):
                             _async_res = await self._send_rgb_color(*self._rgb_color);
                         
                         
-                        if self._ping_roll > 3:
+                        #if self._ping_roll > 3:
+                        if len(queued_devices) > MAX_ACTIVE_DEVICES:
+                            self._remove_device_from_dicts()
                             task_running = False
                             self._ping_roll = 0
                             if self._client is not None:
@@ -414,6 +472,7 @@ class GoveeBluetoothLight(LightEntity):
 
             except Exception as exception:
                 _LOGGER.error("Error sending packets to %s: %s", self.name, exception)
+                self._remove_device_from_dicts()
                 task_running = False
                 try:
                     if self._client is not None:
