@@ -274,9 +274,11 @@ class GoveeBluetoothLight(LightEntity):
         _WB = 0;
 
         if self._control_mode == ControlMode.TEMPERATURE:
-            max_brightness = ModelInfo.get_brightness_max(self.model)
-            brightness = math.floor(self._brightness / 255 * max_brightness)
-            _R = _G = _B = 0xFF * brightness;
+            brightness = self._brightness / 255
+            # _R = _G = _B = 0xFF;
+            _R = int(_R * brightness / 255)
+            _G = int(_G * brightness / 255)
+            _B = int(_B * brightness / 255)
             _TK = int(self._temperature);
             self._temp_rgb_color = [_R,_G,_B]
             pass
