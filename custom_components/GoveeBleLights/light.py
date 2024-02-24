@@ -393,7 +393,7 @@ class GoveeBluetoothLight(LightEntity):
         """Send the packets to the device."""
         task_running = True
 
-        while self.is_dirty() and task_running:
+        while task_running:
             """Connect to the device and send the packets."""
             try:
                 """Connect to the device."""
@@ -406,7 +406,8 @@ class GoveeBluetoothLight(LightEntity):
 
                 _changed = True # send mqtt packet once mqtt is implemented
 
-                self._add_to_active()
+                if self.is_dirty():
+                    self._add_to_active()
             
                 """Send the packets."""
                 if self._dirty_state:
