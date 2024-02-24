@@ -154,6 +154,9 @@ class GoveeBluetoothLight(LightEntity):
             manufacturer="Govee",
             model=self._model,
         )
+    
+    def set_state_attr(self, key, value):
+        self._attr_extra_state_attributes[key] = value
 
     async def async_added_to_hass(self):
         """Run when entity about to be added to hass."""
@@ -183,7 +186,7 @@ class GoveeBluetoothLight(LightEntity):
 
         self._temp_state = True
         self._dirty_state = True
-        self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
+        self._set_state_attr("dirty_state", self._dirty_state)
 
 
         if ATTR_BRIGHTNESS in kwargs:
@@ -191,13 +194,13 @@ class GoveeBluetoothLight(LightEntity):
 
             self._temp_brightness = brightness
             self._dirty_brightness = True
-            self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
+            self._set_state_attr("dirty_brightness", self._dirty_brightness)
         elif ATTR_BRIGHTNESS_PCT in kwargs:
             brightness_pct = kwargs.get(ATTR_BRIGHTNESS_PCT, 100)
 
             self._temp_brightness = brightness_pct * 255 / 100
             self._dirty_brightness = True
-            self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
+            self._set_state_attr("dirty_brightness", self._dirty_brightness)
 
         if ATTR_RGB_COLOR in kwargs:
             red, green, blue = kwargs.get(ATTR_RGB_COLOR)
@@ -205,7 +208,7 @@ class GoveeBluetoothLight(LightEntity):
             self._control_mode = ControlMode.COLOR
             self._temp_rgb_color = [red, green, blue]
             self._dirty_color = True
-            self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_color
+            self._set_state_attr("dirty_rgb_color", self._dirty_color)
         elif ATTR_COLOR_TEMP in kwargs:
             color_temp = kwargs.get(ATTR_COLOR_TEMP)
             kelvin = (1000000 / color_temp)
@@ -216,7 +219,7 @@ class GoveeBluetoothLight(LightEntity):
             self._dirty_color = True
             red, green, blue = kelvin_to_rgb(kelvin)
             self._temp_rgb_color = [red, green, blue]
-            self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_color
+            self._set_state_attr("dirty_rgb_color", self._dirty_color)
 
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
         # if self.client:
@@ -230,14 +233,15 @@ class GoveeBluetoothLight(LightEntity):
 
         self._temp_state = False
         self._dirty_state = True
-        self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
+        self._set_state_attr("dirty_state", self._dirty_state)
 
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
 
 
     async def _send_power(self, power):
         """Send the power state to the device."""
-        self._attr_extra_state_attributes["power_data"] = 0x1 if power else 0x0
+        self._set_state_attr("power_data", 0x1 if power else 0x0)
+
         try:
             return await self._send_bluetooth_data(LedCommand.POWER, [0x1 if power else 0x0])
         
@@ -251,7 +255,8 @@ class GoveeBluetoothLight(LightEntity):
         """Send the brightness to the device."""
         max_brightness = ModelInfo.get_brightness_max(self.model)
         brightness = math.floor(brightness / 255 * max_brightness)
-        self._attr_extra_state_attributes["brightness_data"] = brightness
+        self._set_state_attr("brightness_data", brightness)
+
         _packet = [brightness]
         try:
             return await self._send_bluetooth_data(LedCommand.BRIGHTNESS, _packet)
@@ -275,16 +280,14 @@ class GoveeBluetoothLight(LightEntity):
 
         if self._control_mode == ControlMode.TEMPERATURE:
             brightness = self._brightness / 255
-            # _R = _G = _B = 0xFF;
-            _R = int(_R * brightness / 255)
-            _G = int(_G * brightness / 255)
-            _B = int(_B * brightness / 255)
+            _R = _G = _B = 0xFF;
             _TK = int(self._temperature);
-            self._temp_rgb_color = [_R,_G,_B]
+            # self._temp_rgb_color = [_R,_G,_B]
             pass
-        self._attr_extra_state_attributes["rgb_color_data"] = [_R,_G,_B]
-        self._attr_extra_state_attributes["control_mode"] = self._control_mode
-        self._attr_extra_state_attributes["temperature"] = self._temperature
+        self._set_state_attr("rgb_color_data", [_R,_G,_B])
+
+        self._set_state_attr("control_mode", self._control_mode)
+        self._set_state_attr("temperature", self._temperature)
         
         if not isinstance(_R, int) or _R < 0 or _R > 255:
             return ValueError("Invalid r");
@@ -358,7 +361,7 @@ class GoveeBluetoothLight(LightEntity):
             stale_devices.pop(self._ble_device)
         if not queued_devices.get(self._ble_device):
             queued_devices[self._ble_device] = self
-        self._attr_extra_state_attributes["ble_status"] = "Queued"
+        self._set_state_attr("ble_status", "Queued")
     
     def _add_to_active(self):
         """Add the device to the active devices."""
@@ -368,7 +371,7 @@ class GoveeBluetoothLight(LightEntity):
             stale_devices.pop(self._ble_device)
         if not active_devices.get(self._ble_device):
             active_devices[self._ble_device] = self
-        self._attr_extra_state_attributes["ble_status"] = "Active"
+        self._set_state_attr("ble_status", "Active")
 
     def _add_to_stale(self):
         """Add the device to the stale devices."""
@@ -378,7 +381,7 @@ class GoveeBluetoothLight(LightEntity):
             active_devices.pop(self._ble_device)
         if not stale_devices.get(self._ble_device):
             stale_devices[self._ble_device] = self
-        self._attr_extra_state_attributes["ble_status"] = "Stale"
+        self._set_state_attr("ble_status", "Stale")
 
     def _remove_device_from_dicts(self):
         """Remove the device from the dictionaries."""
@@ -388,8 +391,11 @@ class GoveeBluetoothLight(LightEntity):
             active_devices.pop(self._ble_device)
         if stale_devices.get(self._ble_device):
             stale_devices.pop(self._ble_device)
-        self._attr_extra_state_attributes["ble_status"] = "Removed"
+        self._set_state_attr("ble_status", "Removed")
 
+    def _should_close_stale_connection(self):
+        """Check if the stale connection should be closed."""
+        return len(active_devices) + len(queued_devices) >= MAX_ACTIVE_DEVICES
 
     async def _send_packets_thread(self):
         """Send the packets to the device."""
@@ -418,7 +424,7 @@ class GoveeBluetoothLight(LightEntity):
                         continue
 
                     self._dirty_state = False
-                    self._attr_extra_state_attributes["dirty_state"] = self._dirty_state
+                    self._set_state_attr("dirty_state", self._dirty_state)
                     self._state = self._temp_state
                 elif self._dirty_brightness:
                     if not await self._send_brightness(self._temp_brightness):
@@ -426,7 +432,7 @@ class GoveeBluetoothLight(LightEntity):
                         continue
 
                     self._dirty_brightness = False
-                    self._attr_extra_state_attributes["dirty_brightness"] = self._dirty_brightness
+                    self._set_state_attr("dirty_brightness", self._dirty_brightness)
                     self._brightness = self._temp_brightness
                 elif self._dirty_color:
                     if not await self._send_rgb_color():
@@ -434,7 +440,7 @@ class GoveeBluetoothLight(LightEntity):
                         continue
 
                     self._dirty_color = False
-                    self._attr_extra_state_attributes["dirty_rgb_color"] = self._dirty_color
+                    self._set_state_attr("dirty_rgb_color", self._dirty_color)
                     self._rgb_color = self._temp_rgb_color
                 else:
                     """Keep alive, send a packet every 1 second."""
@@ -453,12 +459,15 @@ class GoveeBluetoothLight(LightEntity):
                         elif self._ping_roll % 3 == 2:
                             _async_res = await self._send_rgb_color();
                         
+                        self.set_state_attr("ping_roll", self._ping_roll)
                         
                         #if self._ping_roll > 3:
-                        if len(queued_devices) > MAX_ACTIVE_DEVICES:
+                        # if ping failed or other device needs to connect, disconnect
+                        if not _async_res or self._should_close_stale_connection():
                             self._remove_device_from_dicts()
                             task_running = False
                             self._ping_roll = 0
+                            self.set_state_attr("ping_roll", self._ping_roll)
                             if self._client is not None:
                                 await self._client.disconnect()
 
@@ -493,7 +502,7 @@ class GoveeBluetoothLight(LightEntity):
     async def _disconnect(self):
         if self._client:
             _LOGGER.debug("Disconnecting from %s", self.name)
-            self._attr_extra_state_attributes["connection_status"] = "Disconnecting"
+            self.set_state_attr("connection_status", "Disconnecting")
             await self._client.disconnect()
             self._client = None
 
@@ -528,7 +537,7 @@ class GoveeBluetoothLight(LightEntity):
             )
             self._client = client
             self._reconnect = 0
-            self._attr_extra_state_attributes["connection_status"] = "Connected"
+            self._set_state_attr("connection_status", "Connected")
 
             return self._client.is_connected
         except Exception as exception:
@@ -551,7 +560,8 @@ class GoveeBluetoothLight(LightEntity):
             raise ValueError('Payload too long')
 
         _LOGGER.debug("Sending command %s with payload %s to %s", cmd, payload, self.name)
-        self._attr_extra_state_attributes["last_command"] = cmd
+        self._set_state_attr("last_command", cmd)
+
         # if ModelInfo.get_led_mode(self.model) != LedMode.MODE_1501:
         cmd = cmd & 0xFF
         payload = bytes(payload)
