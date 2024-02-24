@@ -162,7 +162,8 @@ class GoveeBluetoothLight(LightEntity):
         """Run when entity about to be added to hass."""
         _LOGGER.debug("Adding %s", self.name)
         # await self._connect()
-        _LOGGER.debug("Connected to %s", self.name)
+        self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
+        _LOGGER.debug("Initialized %s", self.name)
 
     async def async_will_remove_from_hass(self):
         """Run when entity will be removed from hass."""
@@ -395,7 +396,7 @@ class GoveeBluetoothLight(LightEntity):
 
     def _should_close_stale_connection(self):
         """Check if the stale connection should be closed."""
-        return len(active_devices) + len(queued_devices) >= MAX_ACTIVE_DEVICES
+        return len(active_devices) + len(queued_devices) + len(stale_devices) >= MAX_ACTIVE_DEVICES
 
     async def _send_packets_thread(self):
         """Send the packets to the device."""
@@ -404,6 +405,12 @@ class GoveeBluetoothLight(LightEntity):
         while task_running:
             """Connect to the device and send the packets."""
             try:
+
+                # if client was previously not connected, this is their first time. set to queue. otherwise it's an active/stale device that's still running
+                if not active_devices.get(self._ble_device) and not stale_devices.get(self._ble_device):
+                    self._add_to_queue()
+                    
+
                 """Connect to the device."""
                 if not await self._connect():
 
