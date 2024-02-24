@@ -178,12 +178,7 @@ class GoveeBluetoothLight(LightEntity):
             self.model,
             kwargs,
         )
-
-        if self._keep_alive_task:
-            self._keep_alive_task.cancel()
-            _LOGGER.debug("Cancelled keep alive task for %s", self.name)
-
-
+        
         self._temp_state = True
         self._dirty_state = True
         self.set_state_attr("dirty_state", self._dirty_state)
@@ -221,20 +216,23 @@ class GoveeBluetoothLight(LightEntity):
             self._temp_rgb_color = [red, green, blue]
             self.set_state_attr("dirty_rgb_color", self._dirty_color)
 
+        while self._keep_alive_task is not None and self._keep_alive_task.cancel():
+            await asyncio.sleep(0.1)
+        _LOGGER.debug("Cancelled keep alive task for %s", self.name)
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
         # if self.client:
             # await self._disconnect()
         
 
     async def async_turn_off(self, **kwargs) -> None:
-        if self._keep_alive_task:
-            self._keep_alive_task.cancel()
-            _LOGGER.debug("Cancelled keep alive task for %s", self.name)
 
         self._temp_state = False
         self._dirty_state = True
         self.set_state_attr("dirty_state", self._dirty_state)
 
+        while self._keep_alive_task is not None and self._keep_alive_task.cancel():
+            await asyncio.sleep(0.1)
+        _LOGGER.debug("Cancelled keep alive task for %s", self.name)
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
 
 
