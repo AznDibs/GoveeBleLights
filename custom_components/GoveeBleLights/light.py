@@ -449,7 +449,7 @@ class GoveeBluetoothLight(LightEntity):
                         elif self._ping_roll % 3 == 1:
                             _async_res = await self._send_brightness(self._brightness);
                         elif self._ping_roll % 3 == 2:
-                            _async_res = await self._send_rgb_color(*self._rgb_color);
+                            _async_res = await self._send_rgb_color();
                         
                         
                         #if self._ping_roll > 3:
