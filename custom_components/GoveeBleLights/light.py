@@ -59,7 +59,7 @@ async def async_setup_entry(
     async_add_entities([GoveeBluetoothLight(light, ble_device, config_entry)])
 
 class GoveeBluetoothLight(LightEntity):
-    MAX_RECONNECT_ATTEMPTS = 1
+    MAX_RECONNECT_ATTEMPTS = 5
     INITIAL_RECONNECT_DELAY = 1 # seconds
 
     ble_device: Optional[BLEDevice] = None
@@ -157,6 +157,13 @@ class GoveeBluetoothLight(LightEntity):
     
     def set_state_attr(self, key, value):
         self._attr_extra_state_attributes[key] = value
+        record_last_update = {
+            "connection_status" : True,
+            "ble_status" : True,
+            "command_sent" : True,
+        }
+        if key in record_last_update:
+            self._attr_extra_state_attributes["last_" + key] = time.time()
 
     async def async_added_to_hass(self):
         """Run when entity about to be added to hass."""
@@ -216,12 +223,9 @@ class GoveeBluetoothLight(LightEntity):
             self._temp_rgb_color = [red, green, blue]
             self.set_state_attr("dirty_rgb_color", self._dirty_color)
 
-        while self._keep_alive_task is not None and self._keep_alive_task.cancel():
-            await asyncio.sleep(0.1)
-        _LOGGER.debug("Cancelled keep alive task for %s", self.name)
+        await self._cancel_packets_thread()
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
-        # if self.client:
-            # await self._disconnect()
+
         
 
     async def async_turn_off(self, **kwargs) -> None:
@@ -230,9 +234,7 @@ class GoveeBluetoothLight(LightEntity):
         self._dirty_state = True
         self.set_state_attr("dirty_state", self._dirty_state)
 
-        while self._keep_alive_task is not None and self._keep_alive_task.cancel():
-            await asyncio.sleep(0.1)
-        _LOGGER.debug("Cancelled keep alive task for %s", self.name)
+        await self._cancel_packets_thread()
         self._keep_alive_task = asyncio.create_task(self._send_packets_thread())
 
 
@@ -395,9 +397,26 @@ class GoveeBluetoothLight(LightEntity):
         """Check if the stale connection should be closed."""
         return len(active_devices) + len(queued_devices) + len(stale_devices) >= MAX_ACTIVE_DEVICES
 
+    async def _cancel_packets_thread(self):
+        """Cancel the packets thread."""
+        try:
+            while self._keep_alive_task is not None and not self._keep_alive_task.cancelled():
+                self._keep_alive_task.cancel()
+                _LOGGER.debug("Cancelling keep alive task for %s", self.name)
+                await asyncio.sleep(0.1)
+            _LOGGER.debug("Cancelled keep alive task for %s", self.name)
+
+            self._reconnect = 0
+
+            return True
+        except Exception as exception:
+            _LOGGER.error("Error cancelling keep alive task for %s: %s", self.name, exception)
+            return False
+
     async def _send_packets_thread(self):
         """Send the packets to the device."""
         task_running = True
+        self._reconnect = 0
 
         while task_running:
             """Connect to the device and send the packets."""
@@ -410,10 +429,11 @@ class GoveeBluetoothLight(LightEntity):
 
                 """Connect to the device."""
                 if not await self._connect():
+                    self._reconnect += 1
 
                     self._add_to_queue()
-
-                    await asyncio.sleep(2)
+                    jitter = self._reconnect * random.uniform(0.1, 0.2)
+                    await asyncio.sleep(2 + jitter)
                     continue
 
                 _changed = True # send mqtt packet once mqtt is implemented
@@ -468,14 +488,14 @@ class GoveeBluetoothLight(LightEntity):
                         #if self._ping_roll > 3:
                         # if ping failed or other device needs to connect, disconnect
                         if not _async_res or self._should_close_stale_connection():
+                            _LOGGER.debug("Closing stale connection for %s", self.name)
                             self._remove_device_from_dicts()
                             task_running = False
+
                             self._ping_roll = 0
                             self.set_state_attr("ping_roll", self._ping_roll)
-                            if self._client is not None:
-                                await self._client.disconnect()
+                            await self._handle_disconnect()
 
-                    jitter = random.uniform(0.3, 0.6)
                     await asyncio.sleep(0.1)
                     continue
                 
@@ -490,25 +510,9 @@ class GoveeBluetoothLight(LightEntity):
                 _LOGGER.error("Error sending packets to %s: %s", self.name, exception)
                 self._remove_device_from_dicts()
                 task_running = False
-                try:
-                    if self._client is not None:
-                        await self._client.disconnect()
-                except Exception as exception:
-                    _LOGGER.error("Error disconnecting from %s: %s", self.name, exception)
+                await self._handle_disconnect()
+                await asyncio.sleep(1)
 
-                self._client = None
-
-                await asyncio.sleep(2)
-
-
-
-
-    async def _disconnect(self):
-        if self._client:
-            _LOGGER.debug("Disconnecting from %s", self.name)
-            self.set_state_attr("connection_status", "Disconnecting")
-            await self._client.disconnect()
-            self._client = None
 
 
 
@@ -518,14 +522,12 @@ class GoveeBluetoothLight(LightEntity):
         if self._client != None and self._client.is_connected:
             return self._client
         
-        try:
-            if self._client is not None:
-                _LOGGER.debug("Disconnecting from %s", self.name)
-                await self._client.disconnect()
-        except Exception as exception:
-            _LOGGER.error("Error disconnecting from %s: %s", exception)
-
-        self._client = None
+        if self._client != None:
+            await self._handle_disconnect()
+        
+        if self._client != None:
+            _LOGGER.error("Aborted connect: Failed to disconnect from inactive %s", self.name)
+            return None
 
         def disconnected_callback(client):
             if self._client == client:
@@ -537,22 +539,32 @@ class GoveeBluetoothLight(LightEntity):
                 self._ble_device, 
                 self.unique_id,
                 disconnected_callback=disconnected_callback,
-                timeout=10.0  # Adjust the timeout as needed
+                timeout=2.0  # Adjust the timeout as needed
             )
             self._client = client
-            self._reconnect = 0
             self.set_state_attr("connection_status", "Connected")
 
             return self._client.is_connected
         except Exception as exception:
             _LOGGER.error("Failed to connect to %s: %s", self.name, exception)
-            self._client = None
+
 
         return None
     
     async def _handle_disconnect(self):
         """Handle the device's disconnection."""
-        # self.async_write_ha_state()
+        try:
+            if self._client is not None and not self._client.is_connected:
+                _LOGGER.debug("Disconnecting from %s", self.name)
+                self.set_state_attr("connection_status", "Disconnecting")
+                await self._client.disconnect()
+                self._remove_device_from_dicts()
+                self._client = None
+                _LOGGER.debug("Disconnected from %s", self.name)
+                self.set_state_attr("connection_status", "Disconnected")
+        except Exception as exception:
+            _LOGGER.error("Error disconnecting from %s: %s", self.name, exception)
+        
     
 
     async def _send_bluetooth_data(self, cmd, payload):
@@ -564,7 +576,6 @@ class GoveeBluetoothLight(LightEntity):
             raise ValueError('Payload too long')
 
         _LOGGER.debug("Sending command %s with payload %s to %s", cmd, payload, self.name)
-        self.set_state_attr("last_command", cmd)
 
         # if ModelInfo.get_led_mode(self.model) != LedMode.MODE_1501:
         cmd = cmd & 0xFF
@@ -585,18 +596,13 @@ class GoveeBluetoothLight(LightEntity):
         try:
             await self._client.write_gatt_char(UUID_CONTROL_CHARACTERISTIC, frame, False)
             self._last_update = time.time()
+            self.set_state_attr("command_sent", cmd)
             _LOGGER.debug("Sent data to %s: %s", self.name, frame)
             return True
         except Exception as exception:
             _LOGGER.error("Error sending data to %s: %s", self.name, exception)
-            try:
-                if self._client is not None:
-                    _LOGGER.debug("Disconnecting from %s", self.name)
-                    await self._client.disconnect()
-            except Exception as exception:
-                _LOGGER.error("Error disconnecting from %s: %s", self.name, exception)
 
-            self._reconnect += 1
-            self._client = None
+            await self._handle_disconnect()
+
 
         return False
