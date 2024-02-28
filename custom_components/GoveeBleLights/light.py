@@ -400,13 +400,22 @@ class GoveeBluetoothLight(LightEntity):
     async def _cancel_packets_thread(self):
         """Cancel the packets thread."""
         try:
+            _max_timeout = 10 
+            _max_attempts = 50
+            _attempts = 0
+            _start_time = time.time()
             while self._keep_alive_task is not None and not self._keep_alive_task.cancelled():
+                if time.time() >= _start_time + _max_timeout or _attempts >= _max_attempts:
+                    _LOGGER.error("Failed to cancel keep alive task for %s: %s attempts", self.name, _attempts)
+                    return False
+                _attempts += 1
                 self._keep_alive_task.cancel()
                 _LOGGER.debug("Cancelling keep alive task for %s", self.name)
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.1 + (0.1 * _attempts))
             _LOGGER.debug("Cancelled keep alive task for %s", self.name)
 
             self._reconnect = 0
+            self._keep_alive_task = None
 
             return True
         except Exception as exception:
@@ -530,8 +539,14 @@ class GoveeBluetoothLight(LightEntity):
             return None
 
         def disconnected_callback(client):
-            if self._client == client:
-                self.hass.loop.create_task(self._handle_disconnect())
+            _LOGGER.debug("Disconnected from %s", self.name)
+            self._remove_device_from_dicts()
+            self._client = None
+            self.set_state_attr("connection_status", "Disconnected")
+            self._reconnect = 0
+            self._ping_roll = 0
+            self.set_state_attr("ping_roll", self._ping_roll)
+            self._last_update = time.time()
 
         try:
             client = await bleak_retry_connector.establish_connection(
