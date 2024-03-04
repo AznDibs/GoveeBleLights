@@ -489,29 +489,29 @@ class GoveeBluetoothLight(LightEntity):
             
                 """Send the packets."""
                 if self._dirty_state:
+                    self._state = self._temp_state
                     if not await self._send_power(self._temp_state):
                         await asyncio.sleep(1);
                         continue
 
                     self._dirty_state = False
                     self.set_state_attr("dirty_state", self._dirty_state)
-                    self._state = self._temp_state
                 elif self._dirty_brightness:
+                    self._brightness = self._temp_brightness
                     if not await self._send_brightness(self._temp_brightness):
                         await asyncio.sleep(1);
                         continue
 
                     self._dirty_brightness = False
                     self.set_state_attr("dirty_brightness", self._dirty_brightness)
-                    self._brightness = self._temp_brightness
                 elif self._dirty_color:
+                    self._rgb_color = self._temp_rgb_color
                     if not await self._send_rgb_color():
                         await asyncio.sleep(1);
                         continue
 
                     self._dirty_color = False
                     self.set_state_attr("dirty_rgb_color", self._dirty_color)
-                    self._rgb_color = self._temp_rgb_color
                 else:
                     """Keep alive, send a packet every 1 second."""
                     _changed = False # no mqtt packet if no change
@@ -536,7 +536,6 @@ class GoveeBluetoothLight(LightEntity):
                         # if ping failed or other device needs to connect, disconnect
                         if not _async_res or self._should_close_stale_connection():
                             _LOGGER.debug("Closing stale connection for %s", self.name)
-                            self._remove_device_from_dicts()
                             task_running = False
 
                             self._ping_roll = 0
@@ -557,7 +556,6 @@ class GoveeBluetoothLight(LightEntity):
 
             except Exception as exception:
                 _LOGGER.error("Error sending packets to %s: %s", self.name, exception)
-                self._remove_device_from_dicts()
                 task_running = False
                 await self._handle_disconnect()
                 await asyncio.sleep(1)
@@ -594,6 +592,9 @@ class GoveeBluetoothLight(LightEntity):
                 https://developers.home-assistant.io/docs/bluetooth/
                 Use a connection timeout of at least ten (10) seconds as BlueZ must resolve services when connecting to a new or updated device for the first time.
             '''
+
+            self.set_state_attr("connection_status", "Establishing")
+
             client = await bleak_retry_connector.establish_connection(
                 BleakClient,
                 self._ble_device, 
