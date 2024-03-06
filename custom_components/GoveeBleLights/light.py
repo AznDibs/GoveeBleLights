@@ -620,9 +620,9 @@ class GoveeBluetoothLight(LightEntity):
     
     async def _handle_disconnect(self):
         """Handle the device's disconnection."""
-        self._remove_device_from_dicts()
         try:
             if self._client is not None and not self._client.is_connected:
+                self._remove_device_from_dicts()
                 _LOGGER.debug("Disconnecting from %s", self.name)
                 self.set_state_attr("connection_status", "Disconnecting")
                 await self._client.disconnect()
