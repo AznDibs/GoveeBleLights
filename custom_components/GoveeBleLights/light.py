@@ -36,7 +36,7 @@ UUID_CONTROL_CHARACTERISTIC = '00010203-0405-0607-0809-0a0b0c0d2b11'
 
 PARALLEL_UPDATES = 1
 
-MAX_ACTIVE_DEVICES = 14
+MAX_ACTIVE_DEVICES = 3
 
 # devices trying to connect
 queued_devices = {}
@@ -427,7 +427,10 @@ class GoveeBluetoothLight(LightEntity):
 
     def _should_close_stale_connection(self):
         """Check if the stale connection should be closed."""
-        _total_devices = len(active_devices) + len(queued_devices) + len(stale_devices)
+        if self._ping_roll > 10:
+            return True
+
+        _total_devices = len(active_devices) + len(stale_devices)
         _LOGGER.debug("Total devices: %s", _total_devices)
         if _total_devices < MAX_ACTIVE_DEVICES:
             return False
@@ -557,6 +560,7 @@ class GoveeBluetoothLight(LightEntity):
             except Exception as exception:
                 _LOGGER.error("Error sending packets to %s: %s", self.name, exception)
                 task_running = False
+                self._remove_device_from_dicts()
                 await self._handle_disconnect()
                 await asyncio.sleep(1)
 
@@ -607,6 +611,8 @@ class GoveeBluetoothLight(LightEntity):
 
             return self._client.is_connected
         except Exception as exception:
+            self.set_state_attr("connection_status", "Failed to connect")
+            self._remove_device_from_dicts()
             _LOGGER.error("Failed to connect to %s: %s", self.name, exception)
 
 
@@ -614,17 +620,18 @@ class GoveeBluetoothLight(LightEntity):
     
     async def _handle_disconnect(self):
         """Handle the device's disconnection."""
+        self._remove_device_from_dicts()
         try:
             if self._client is not None and not self._client.is_connected:
                 _LOGGER.debug("Disconnecting from %s", self.name)
                 self.set_state_attr("connection_status", "Disconnecting")
                 await self._client.disconnect()
-                self._remove_device_from_dicts()
                 self._client = None
                 _LOGGER.debug("Disconnected from %s", self.name)
                 self.set_state_attr("connection_status", "Disconnected")
                 self.updater.request_update()
         except Exception as exception:
+            self.set_state_attr("connection_status", "Failed to disconnect")
             _LOGGER.error("Error disconnecting from %s: %s", self.name, exception)
         
     
@@ -663,7 +670,6 @@ class GoveeBluetoothLight(LightEntity):
             return True
         except Exception as exception:
             _LOGGER.error("Error sending data to %s: %s", self.name, exception)
-
             await self._handle_disconnect()
 
 
