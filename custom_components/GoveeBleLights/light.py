@@ -489,7 +489,6 @@ class GoveeBluetoothLight(LightEntity):
                         _LOGGER.error("Failed to connect to %s after %s attempts", self.name, self.MAX_RECONNECT_ATTEMPTS)
                         task_running = False
                         await self._handle_disconnect()
-                        await asyncio.sleep(1)
                         continue
 
                     self._add_to_queue()
