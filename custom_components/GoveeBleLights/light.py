@@ -584,15 +584,7 @@ class GoveeBluetoothLight(LightEntity):
 
     async def _connect(self):
 
-        if self._client != None and self._client.is_connected:
-            return self._client
-        
-        if self._client != None:
-            await self._handle_disconnect()
-        
-        if self._client != None:
-            _LOGGER.error("Aborted connect: Failed to disconnect from inactive %s", self.name)
-            return None
+        self._client = None
 
         def disconnected_callback(client):
             _LOGGER.debug("Disconnected from %s", self.name)
