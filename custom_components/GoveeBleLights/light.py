@@ -63,7 +63,7 @@ async def async_setup_entry(
     async_add_entities([GoveeBluetoothLight(hass, light, ble_device, config_entry)])
 
 class GoveeBluetoothLight(LightEntity):
-    MAX_RECONNECT_ATTEMPTS = 0
+    MAX_RECONNECT_ATTEMPTS = 5
     INITIAL_RECONNECT_DELAY = 1 # seconds
     DEVICE_PING_INTERVAL = 30 # seconds
 
@@ -202,9 +202,7 @@ class GoveeBluetoothLight(LightEntity):
     async def async_will_remove_from_hass(self):
         """Run when entity will be removed from hass."""
         _LOGGER.debug("Removing %s", self.name)
-        if self._keep_alive_task:
-            self._keep_alive_task.cancel()
-            _LOGGER.debug("Cancelled keep alive task for %s", self.name)
+        await self._cancel_packets_thread()
 
     async def async_turn_on(self, **kwargs) -> None:
         _LOGGER.debug(
@@ -583,7 +581,15 @@ class GoveeBluetoothLight(LightEntity):
 
     async def _connect(self):
 
-        self._client = None
+        if self._client != None and self._client.is_connected:
+            return self._client
+
+        if self._client != None:
+            await self._handle_disconnect()
+
+        if self._client != None:
+            _LOGGER.error("Aborted connect: Failed to disconnect from inactive %s", self.name)
+            return None
 
         def disconnected_callback(client):
             _LOGGER.debug("Disconnected from %s", self.name)
